@@ -19,12 +19,12 @@ class ApiController extends Controller
 
         $mykey = "Bnm34$4@dDza";
 
-        if($api_key != $mykey){
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Invalid API Key'
-            ], 401);
-        }
+        // if($api_key != $mykey){
+        //     return response()->json([
+        //         'status' => 'error',
+        //         'message' => 'Invalid API Key'
+        //     ], 401);
+        // }
 
         $serviceId = SmService::where('random_id', $id)->value('api_id');
 
