@@ -15,6 +15,16 @@ class ApiController extends Controller
         $id = $request->post('id');
         $link = $request->post('link');
         $quantity = $request->post('quantity');
+        $api_key = $request->post('api_key');
+
+        $mykey = "Bnm34$4@dDza";
+
+        if($api_key != $mykey){
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid API Key'
+            ], 401);
+        }
 
         $serviceId = SmService::where('random_id', $id)->value('api_id');
 
