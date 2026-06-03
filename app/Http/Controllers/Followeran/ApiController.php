@@ -31,11 +31,6 @@ class ApiController extends Controller
         $quantity = $optionsArr[$this->optionMap[$id]['quantity']];
         $link = $optionsArr[$this->optionMap[$id]['link']];
 
-        return response()->json([
-            'id' => $id,
-            'quantity' => $quantity,
-            'link' => $link
-        ],404);
 
         $serviceId = SmService::where('random_id', $id)->value('api_id');
 
@@ -45,6 +40,11 @@ class ApiController extends Controller
             'quantity' => $quantity,
             'api_id' => $id,
             'service_id' => $serviceId
+        ]);
+
+        return response()->json([
+            'message' => 'Order is being processed',
+            'order' => $order
         ]);
 
         $response = Http::asForm()->post('https://my.followeran.ir/api/v2', [
