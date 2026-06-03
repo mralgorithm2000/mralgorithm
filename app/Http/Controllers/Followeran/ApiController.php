@@ -18,6 +18,18 @@ class ApiController extends Controller
         ],
     ];
 
+    private $quantityMap = [
+        "5926634" => [
+            "20901519" => 100,
+            "20901520" => 500,
+            "20901552" => 1000,
+            "20901564" => 5000,
+            "20901566" => 10000,
+            "20901570" => 15000,
+            "20901658" => 20000,
+        ],
+    ];
+
     public function send(Request $request)
     {
         $id = $request->input('id');
@@ -28,9 +40,10 @@ class ApiController extends Controller
         foreach($options as $option){
             $optionsArr[$option['id']] = $option['user_data'];
         }
-        $quantity = $optionsArr[$this->optionMap[$id]['quantity']];
+        
+        $quantityID = $optionsArr[$this->optionMap[$id]['quantity']];
         $link = $optionsArr[$this->optionMap[$id]['link']];
-
+        $quantity = $this->quantityMap[$id][$quantityID];
 
         $serviceId = SmService::where('random_id', $id)->value('api_id');
 
@@ -44,7 +57,9 @@ class ApiController extends Controller
 
         return response()->json([
             'message' => 'Order is being processed',
-            'order' => $order
+            'order' => $order,
+            'quantity' => $quantity,
+            'link' => $link,
         ]);
 
         $response = Http::asForm()->post('https://my.followeran.ir/api/v2', [
