@@ -40,7 +40,7 @@ class ApiController extends Controller
         foreach($options as $option){
             $optionsArr[$option['id']] = $option['user_data'];
         }
-        
+
         $quantityID = $optionsArr[$this->optionMap[$id]['quantity']];
         $link = $optionsArr[$this->optionMap[$id]['link']];
         $quantity = $this->quantityMap[$id][$quantityID];
@@ -53,13 +53,6 @@ class ApiController extends Controller
             'quantity' => $quantity,
             'api_id' => $id,
             'service_id' => $serviceId
-        ]);
-
-        return response()->json([
-            'message' => 'Order is being processed',
-            'order' => $order,
-            'quantity' => $quantity,
-            'link' => $link,
         ]);
 
         $response = Http::asForm()->post('https://my.followeran.ir/api/v2', [
