@@ -10,21 +10,27 @@ use Illuminate\Support\Facades\Http;
 
 class ApiController extends Controller
 {
+
+    private $optionMap = [
+        "5172020" => [
+            "quantity" => "5172020",
+            "link" => "5172037",
+        ],
+    ];
+
     public function send(Request $request)
     {
-        $id = $request->post('id');
-        $link = $request->post('link');
-        $quantity = $request->post('quantity');
-        $api_key = $request->post('api_key');
+        $id = $request->input('id');
+        $options = $request->input('options');
 
-        $mykey = "Bnm34$4@dDza";
+        $quantity = $options[$this->optionMap[$id]['quantity']];
+        $link = $options[$this->optionMap[$id]['link']];
 
-        // if($api_key != $mykey){
-        //     return response()->json([
-        //         'status' => 'error',
-        //         'message' => 'Invalid API Key'
-        //     ], 401);
-        // }
+        return response()->json([
+            'id' => $id,
+            'quantity' => $quantity,
+            'link' => $link
+        ],404);
 
         $serviceId = SmService::where('random_id', $id)->value('api_id');
 
