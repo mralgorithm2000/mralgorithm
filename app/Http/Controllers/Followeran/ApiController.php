@@ -23,6 +23,11 @@ class ApiController extends Controller
         $id = $request->input('id');
         $options = $request->input('options');
 
+        $optionsArr = [];
+
+        foreach($options as $option){
+            $optionsArr[$option['id']] = $option['user_data'];
+        }
         $quantity = $options[$this->optionMap[$id]['quantity']];
         $link = $options[$this->optionMap[$id]['link']];
 
