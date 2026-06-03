@@ -28,8 +28,8 @@ class ApiController extends Controller
         foreach($options as $option){
             $optionsArr[$option['id']] = $option['user_data'];
         }
-        $quantity = $options[$this->optionMap[$id]['quantity']];
-        $link = $options[$this->optionMap[$id]['link']];
+        $quantity = $optionsArr[$this->optionMap[$id]['quantity']];
+        $link = $optionsArr[$this->optionMap[$id]['link']];
 
         return response()->json([
             'id' => $id,
