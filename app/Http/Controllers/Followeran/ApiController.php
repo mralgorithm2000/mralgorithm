@@ -89,19 +89,13 @@ class ApiController extends Controller
 
         $serviceId = SmService::where('random_id', $id)->value('api_id');
 
-        $order = Order::create([ 
+        $order = Order::create([
             'status' => 'init',
             'link' => $link,
             'quantity' => $quantity,
             'api_id' => $id,
             'service_id' => $serviceId
         ]);
-
-        return response()->json([
-            'message' => 'Order created successfully',
-            'order' => $order,
-        ], 201);
-
 
         $response = Http::asForm()->post('https://my.followeran.ir/api/v2', [
             'key' => env('FOLLOWERAN_API_KEY'),
