@@ -23,6 +23,12 @@ class ApiController extends Controller
             "quantity" => "5175510",
             "link" => "5175524",
         ],
+
+        //Instagram Likes | Instant Start | Extremely fast | 100–100,000 Likes
+        "5927229"=> [
+            "quantity" => "5175580",
+            "link" => "5175871",
+        ]
     ];
 
     private $quantityMap = [
@@ -50,6 +56,20 @@ class ApiController extends Controller
             "20930066" => 70000,
             "20930068" => 100000,
         ],
+
+        //Instagram Likes | Instant Start | Extremely fast | 100–100,000 Likes
+        "5927229" => [
+            "20930597" => 100,
+            "20931380" => 500,
+            "20931388" => 1000,
+            "20931391" => 5000,
+            "20931414" => 10000,
+            "20931421" => 15000,
+            "20931422" => 20000,
+            "20931423" => 50000,
+            "20931424" => 70000,
+            "20931425" => 100000,
+        ],
     ];
 
     public function send(Request $request)
@@ -76,6 +96,11 @@ class ApiController extends Controller
             'api_id' => $id,
             'service_id' => $serviceId
         ]);
+
+        return response()->json([
+            'message' => 'Order created successfully',
+            'order' => $order,
+        ], 201);
 
 
         $response = Http::asForm()->post('https://my.followeran.ir/api/v2', [
