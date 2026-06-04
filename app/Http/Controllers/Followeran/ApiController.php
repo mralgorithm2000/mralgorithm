@@ -77,10 +77,6 @@ class ApiController extends Controller
             'service_id' => $serviceId
         ]);
 
-        return response()->json([
-            'message' => 'Order is being processed',
-            'order' => $order
-        ]);
 
         $response = Http::asForm()->post('https://my.followeran.ir/api/v2', [
             'key' => env('FOLLOWERAN_API_KEY'),
