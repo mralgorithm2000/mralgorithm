@@ -89,7 +89,7 @@ class ApiController extends Controller
 
         $serviceId = SmService::where('random_id', $id)->value('api_id');
 
-        $order = Order::create([
+        $order = Order::create([ 
             'status' => 'init',
             'link' => $link,
             'quantity' => $quantity,
