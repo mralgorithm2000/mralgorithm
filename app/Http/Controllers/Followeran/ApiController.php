@@ -153,7 +153,7 @@ class ApiController extends Controller
         ]);
 
 
-        $response = Http::asForm()->post('https://my.followeran.ir/api/v2', [
+        $response = Http::asForm()->post('https://panel.smmflw.com/api/iran', [
             'key' => env('FOLLOWERAN_API_KEY'),
             'action' => 'add',
             'service' => $serviceId,
