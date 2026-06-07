@@ -30,10 +30,17 @@ class ApiController extends Controller
             "link" => "5175871",
         ],
 
+        //Telegram Members Boost – Budget Start Pack
         "5928220" => [
             "quantity"=> "5179930",
             "link"=> "5179958",
-        ]
+        ],
+
+        //Telegram Members Boost – Standard Package
+        "5930747" => [
+            "quantity"=> "5196294",
+            "link"=> "5196295",
+        ],
     ];
 
     private $quantityMap = [
@@ -84,6 +91,20 @@ class ApiController extends Controller
             "20960287" => 7000,
             "20960300" => 10000,
         ],
+
+        //Telegram Members Boost – Standard Package
+        "5930747" => [
+            "21126582" => 500,
+            "21126583" => 1000,
+            "21126584" => 3000,
+            "21126585" => 5000,
+            "21126586" => 7000,
+            "21126587" => 10000,
+            "21126588" => 13000,
+            "21126589" => 15000,
+            "21126590" => 17000,
+            "21126592" => 20000
+        ],
     ];
 
     public function send(Request $request)
@@ -109,6 +130,10 @@ class ApiController extends Controller
             'quantity' => $quantity,
             'api_id' => $id,
             'service_id' => $serviceId
+        ]);
+
+        return response()->json([
+            "order" => $order
         ]);
 
         $response = Http::asForm()->post('https://my.followeran.ir/api/v2', [
