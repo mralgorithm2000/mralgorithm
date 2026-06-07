@@ -41,6 +41,12 @@ class ApiController extends Controller
             "quantity"=> "5196294",
             "link"=> "5196295",
         ],
+
+        //Telegram Members Boost – Speed Package
+        "5930752" => [
+            "quantity"=> "5196320",
+            "link"=> "5196346",
+        ],
     ];
 
     private $quantityMap = [
@@ -105,6 +111,20 @@ class ApiController extends Controller
             "21126590" => 17000,
             "21126592" => 20000
         ],
+
+        //Telegram Members Boost – Speed Package
+        "5930752" => [
+            "21126787" => 500,
+            "21126788" => 1000,
+            "21126798" => 3000,
+            "21126828" => 5000,
+            "21126852" => 7000,
+            "21126862" => 10000,
+            "21126894" => 13000,
+            "21126896" => 15000,
+            "21126920" => 17000,
+            "21126933" => 20000
+        ]
     ];
 
     public function send(Request $request)
@@ -132,6 +152,9 @@ class ApiController extends Controller
             'service_id' => $serviceId
         ]);
 
+        return response()->json([
+            'order'=> $order,
+        ]);
         $response = Http::asForm()->post('https://my.followeran.ir/api/v2', [
             'key' => env('FOLLOWERAN_API_KEY'),
             'action' => 'add',
