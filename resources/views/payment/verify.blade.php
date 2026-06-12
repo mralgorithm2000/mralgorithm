@@ -233,7 +233,7 @@
                 } else {
 
                     resultMessage.className = 'error';
-
+                    try_again.style.display = 'block';
                     resultMessage.innerText =
                         data.message ||
                         "{{ __('payment.error') }}";
