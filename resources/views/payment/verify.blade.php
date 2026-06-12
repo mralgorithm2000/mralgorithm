@@ -41,7 +41,7 @@
             from {
                 transform: rotate(0deg);
             }
- 
+
             to {
                 transform: rotate(360deg);
             }
@@ -118,6 +118,8 @@
         <div id="result-section" style="display:none;">
 
             <h3 id="result-message"></h3>
+            <button type="button" id="try_again" style="display:none"
+                onclick="refreshPage()">@lang('passwords.try_again')</button>
 
             {{-- Order ID --}}
             <div id="order-id-container" style="display:none; margin-top:20px;">
@@ -134,19 +136,14 @@
                     </button>
                 </div>
 
-                <p id="copy-success"
-                   class="copy-success"
-                   style="display:none;">
+                <p id="copy-success" class="copy-success" style="display:none;">
                     {{ __('payment.copied') }}
                 </p>
 
             </div>
 
             {{-- Status Button --}}
-            <a id="status-button"
-               href="/orders/status"
-               class="btn"
-               style="display:none;">
+            <a id="status-button" href="/orders/status" class="btn" style="display:none;">
                 {{ __('payment.status_button') }}
             </a>
 
@@ -169,6 +166,7 @@
             const orderIdValue = document.getElementById('order-id-value');
             const copySuccess = document.getElementById('copy-success');
             const copyBtn = document.getElementById('copy-order-btn');
+            const try_again = document.getElementById('try_again');
 
             // Copy order ID
             copyBtn.addEventListener('click', async () => {
@@ -196,8 +194,7 @@
             try {
 
                 const response = await fetch(
-                    '{{ url('/api/verify') }}',
-                    {
+                    '{{ url('/api/verify') }}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -248,6 +245,7 @@
 
                 loadingSection.style.display = 'none';
                 resultSection.style.display = 'block';
+                try_again.style.display = 'block';
 
                 resultMessage.className = 'error';
 
@@ -256,6 +254,10 @@
             }
 
         });
+
+        function refreshPage() {
+            window.location.reload();
+        }
     </script>
 
 </body>

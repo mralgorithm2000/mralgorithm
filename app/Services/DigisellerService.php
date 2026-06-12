@@ -35,7 +35,7 @@ class DigisellerService
         $token = $this->getToken();
 
         $response = Http::acceptJson()->put(
-            "https://api.digiseller.com/api/purchases/unique-code/{$uniqueCode}",
+            "https://api.digiseller.com/api/purchases/unique-code/{$uniqueCode}/deliver",
             [
                 'token' => $token,
             ]
