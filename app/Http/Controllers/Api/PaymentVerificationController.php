@@ -19,6 +19,8 @@ class PaymentVerificationController extends Controller
         $verification = $digiseller->verifyPurchase($request->post('uniquecode'));
 
         $this->doTheJob($verification['id_goods'], $verification['cnt_goods'],$verification['options']);
+
+        $verification = $digiseller->markAsDelivered($request->post('uniquecode'));
         return response()->json([
             'success' => true,
             'order_id' => "123456798",
