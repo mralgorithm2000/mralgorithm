@@ -33,8 +33,8 @@ class PaymentVerificationController extends Controller
             $optionsArr[$option['id']] = $option['variant_id'];
         }
 
-        $serviceTypeId = Option::where('service_id',$service_id)->where('type','service_type')->value('option_id');
-        $serviceLinkId = Option::where('service_id',$service_id)->where('type','link')->value('option_id');
+        $serviceTypeId = Option::where('plati_id',$service_id)->where('type','service_type')->value('option_id');
+        $serviceLinkId = Option::where('plati_id',$service_id)->where('type','link')->value('option_id');
 
         $link = $optionsArr[$serviceLinkId];
         $plati_id = $optionsArr[$serviceTypeId];

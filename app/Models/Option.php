@@ -9,7 +9,7 @@ class Option extends Model
     protected $table = 'options';
 
     protected $fillable = [
-        'service_id',
+        'plati_id',
         'option_id',
         'title',
         'type'
