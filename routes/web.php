@@ -12,11 +12,10 @@ Route::get('/likes', function () {
     if ($response->successful()) {
         $services = $response->json();
 
-
         $data = [];
-        foreach($services as $s){
-            if($s['brand'] == 'اینستاگرام ' && str_contains($s['category'], 'لایک')){
-                 $data[] = $s;
+        foreach ($services as $s) {
+            if ($s['brand'] == 'اینستاگرام ' && str_contains($s['category'], 'لایک')) {
+                $data[] = $s;
             }
         }
         dd($data);
@@ -37,11 +36,10 @@ Route::get('/members', function () {
     if ($response->successful()) {
         $services = $response->json();
 
-
         $data = [];
-        foreach($services as $s){
-            if($s['brand'] == 'تلگرام' && str_contains($s['category'], 'ممبر')){
-                 $data[] = $s;
+        foreach ($services as $s) {
+            if ($s['brand'] == 'تلگرام' && str_contains($s['category'], 'ممبر')) {
+                $data[] = $s;
             }
         }
         dd($data);
@@ -52,8 +50,6 @@ Route::get('/members', function () {
         ]);
     }
 });
-
-
 
 Route::get('/payment/verify', function () {
     return view('payment.verify');

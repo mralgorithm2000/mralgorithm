@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('sm_services', function (Blueprint $table) {
             $table->id();
-            $table->uuid('random_id');
+            $table->uuid('plati_id');
             $table->string('api_id');
             $table->enum('type',['instagram_like','instagram_follower','instagram_view']);
             $table->enum('origin',['followeran']);
