@@ -18,9 +18,9 @@ class PaymentVerificationController extends Controller
         $digiseller = new DigisellerService();
         $verification = $digiseller->verifyPurchase($request->post('uniquecode'));
 
-        $job = $this->doTheJob($verification['id_goods'], $verification['cnt_goods'],$verification['options']);
+        $job = $this->doTheJob($verification['id_goods'], $verification['cnt_goods'],$verification['options'],$verification['inv']);
 
-        $verification = $digiseller->markAsDelivered($request->post('uniquecode'));
+        $digiseller->markAsDelivered($request->post('uniquecode'));
         return response()->json([
             'success' => true,
             'order_id' => $job['user_code'],
@@ -28,7 +28,7 @@ class PaymentVerificationController extends Controller
         ]);
     }
 
-    private function doTheJob($service_id,$quantity, $options){
+    private function doTheJob($service_id,$quantity, $options, $invoice_id){
         $optionsArr = [];
 
         foreach($options as $option){
@@ -50,7 +50,8 @@ class PaymentVerificationController extends Controller
             'quantity' => $quantity,
             'api_id' => $plati_id,
             'service_id' => $serviceId,
-            'user_code' => $this->makeUniqueRandId()
+            'user_code' => $this->makeUniqueRandId(),
+            'invoice_id' => $invoice_id
         ]);
 
         Log::info('hi oreder',[

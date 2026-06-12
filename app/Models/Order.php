@@ -15,6 +15,8 @@ class Order extends Model
         'service_id',
         'quantity',
         'error',
-        'user_code'
+        'user_code',
+        'unique_code',
+        'marked_as_delivered'
     ];
 }
