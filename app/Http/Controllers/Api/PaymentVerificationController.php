@@ -42,7 +42,7 @@ class PaymentVerificationController extends Controller
         $serviceId = SmService::where('plati_id',$plati_id)->value('api_id');
 
 
-        $order = Order::create([
+        $order = Order::create([ 
             'status' => 'init',
             'link' => $link,
             'quantity' => $quantity,
