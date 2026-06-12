@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentVerificationController extends Controller
 {
-    public function verify(Request $request){ 
+    public function verify(Request $request){
         $digiseller = new DigisellerService();
         $verification = $digiseller->verifyPurchase($request->post('uniquecode'));
 
@@ -30,7 +30,7 @@ class PaymentVerificationController extends Controller
         $optionsArr = [];
 
         foreach($options as $option){
-            $optionsArr[$option['id']] = $option['variant_id'];
+            $optionsArr[$option['id']] = $option['variant_id'] ?? $option['value'];
         }
 
         $serviceTypeId = Option::where('plati_id',$service_id)->where('type','service_type')->value('option_id');
@@ -51,6 +51,7 @@ class PaymentVerificationController extends Controller
         ]);
 
         Log::info('hi oreder',[
+            'serviceLinkId' => $serviceLinkId,
             'order' => $order
         ]);
 
