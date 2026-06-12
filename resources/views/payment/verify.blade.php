@@ -99,6 +99,25 @@
         .message {
             margin-top: 15px;
         }
+
+        .try-again-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .try-again-btn {
+            background-color: #0dcaf0;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .try-again-btn:hover {
+            background-color: #31d2f2;
+        }
     </style>
 </head>
 
@@ -118,8 +137,13 @@
         <div id="result-section" style="display:none;">
 
             <h3 id="result-message"></h3>
-            <button type="button" id="try_again" style="display:none"
-                onclick="refreshPage()">@lang('passwords.try_again')</button>
+
+            <div class="try-again-container">
+                <button type="button" id="try_again" class="try-again-btn" style="display:none"
+                    onclick="refreshPage()">
+                    @lang('payment.try_again')
+                </button>
+            </div>
 
             {{-- Order ID --}}
             <div id="order-id-container" style="display:none; margin-top:20px;">
