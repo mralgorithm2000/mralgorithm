@@ -18,13 +18,13 @@ class PaymentVerificationController extends Controller
         $digiseller = new DigisellerService();
         $verification = $digiseller->verifyPurchase($request->post('uniquecode'));
 
-        $this->doTheJob($verification['id_goods'], $verification['cnt_goods'],$verification['options']);
+        $job = $this->doTheJob($verification['id_goods'], $verification['cnt_goods'],$verification['options']);
 
         $verification = $digiseller->markAsDelivered($request->post('uniquecode'));
         return response()->json([
             'success' => true,
-            'order_id' => "123456798",
-            'message' => 'Payment verified successfully.',
+            'order_id' => $job['user_code'],
+            'message' => __('payment.success'),
         ]);
     }
 
@@ -49,7 +49,8 @@ class PaymentVerificationController extends Controller
             'link' => $link,
             'quantity' => $quantity,
             'api_id' => $plati_id,
-            'service_id' => $serviceId
+            'service_id' => $serviceId,
+            'user_code' => $this->makeUniqueRandId()
         ]);
 
         Log::info('hi oreder',[
@@ -57,8 +58,9 @@ class PaymentVerificationController extends Controller
             'order' => $order
         ]);
 
-
-        return 0;
+        return [
+            'user_code' => $order->user_code,
+        ];
         $response = Http::asForm()->post('https://panel.smmflw.com/api/iran', [
             'key' => env('FOLLOWERAN_API_KEY'),
             'action' => 'add',
@@ -90,5 +92,19 @@ class PaymentVerificationController extends Controller
                 'error' => $response->body()
             ]);
         }
+        return [
+            'user_code' => $order->user_code,
+        ];
+    }
+
+    private function makeUniqueRandId(){
+        $randid = rand(1000000,9999999);
+
+        $order = Order::where('user_code',$randid)->first();
+
+        if($order){
+            return $this->makeUniqueRandId();
+        }
+        return $randid;
     }
 }
