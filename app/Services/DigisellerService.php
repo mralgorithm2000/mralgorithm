@@ -69,6 +69,10 @@ class DigisellerService
 
             $data = $response->json();
 
+            Log::info('token_date',[
+                'date' => $data
+            ]);
+
             PlatiTokens::truncate();
             PlatiTokens::create([
                 'token' => $data['token'],
