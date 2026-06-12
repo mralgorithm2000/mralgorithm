@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PlatiTokens;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -71,7 +72,7 @@ class DigisellerService
             PlatiTokens::truncate();
             PlatiTokens::create([
                 'token' => $data['token'],
-                'expire_time' => $data['valid_thru'],
+                'expire_time' => Carbon::parse($data['valid_thru']),
             ]);
 
             return $data['token'];
