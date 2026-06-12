@@ -14,6 +14,7 @@ class Order extends Model
         'api_id',
         'service_id',
         'quantity',
-        'error'
+        'error',
+        'user_code'
     ];
 }
