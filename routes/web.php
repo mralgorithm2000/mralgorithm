@@ -54,6 +54,7 @@ Route::get('/members', function () {
 });
 
 
-Route::get('/uuid', function () {
-    return uuid_create();
-});
+
+Route::get('/payment/verify', function () {
+    return view('payment.verify');
+})->name('payment.verify');
