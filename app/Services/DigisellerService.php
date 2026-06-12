@@ -41,6 +41,10 @@ class DigisellerService
             ]
         );
 
+         Log::info('markAsDelivered', [
+            'response' => $response->json(),
+        ]);
+
         if (! $response->successful()) {
             throw new \Exception('Failed to mark purchase as delivered.');
         }
