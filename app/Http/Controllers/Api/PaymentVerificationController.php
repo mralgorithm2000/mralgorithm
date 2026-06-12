@@ -42,7 +42,7 @@ class PaymentVerificationController extends Controller
         $serviceId = SmService::where('plati_id',$plati_id)->value('api_id');
 
 
-        $order = Order::create([ 
+        $order = Order::create([
             'status' => 'init',
             'link' => $link,
             'quantity' => $quantity,
@@ -50,7 +50,12 @@ class PaymentVerificationController extends Controller
             'service_id' => $serviceId
         ]);
 
+        Log::info('hi oreder',[
+            'order' => $order
+        ]);
 
+
+        return 0;
         $response = Http::asForm()->post('https://panel.smmflw.com/api/iran', [
             'key' => env('FOLLOWERAN_API_KEY'),
             'action' => 'add',
