@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class DigisellerService
 {
@@ -16,6 +17,9 @@ class DigisellerService
                 'token' => $token,
             ]
         );
+        Log::info('verification',[
+            'response' => $response->json()
+        ]);
 
         if (! $response->successful()) {
             throw new \Exception('Failed to verify Digiseller purchase.');
