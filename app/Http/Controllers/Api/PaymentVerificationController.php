@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentVerificationController extends Controller
 {
-    public function verify(Request $request){
+    public function verify(Request $request){ 
         $digiseller = new DigisellerService();
         $verification = $digiseller->verifyPurchase($request->post('uniquecode'));
 
