@@ -35,7 +35,7 @@ class DigisellerService
         $token = $this->getToken();
 
         $response = Http::acceptJson()->put(
-            "https://api.digiseller.com/api/purchases/unique-code/{$uniqueCode}/deliver",
+            "https://api.digiseller.com/api/purchases/unique-code/{$uniqueCode}/deliver?token=" . $token,
             [
                 'token' => $token,
             ]
@@ -55,7 +55,11 @@ class DigisellerService
 
     private function getToken()
     {
-        $platiToken = PlatiTokens::where('expire_time', '<', time())->value('token');
+        $platiToken = PlatiTokens::where('expire_time', '>', time())->value('token');
+
+          Log::info('token token token', [
+                'platiToken' => $platiToken,
+            ]);
 
         if ($platiToken) {
             Log::info('token token token', [
