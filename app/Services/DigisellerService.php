@@ -42,6 +42,7 @@ class DigisellerService
         );
 
          Log::info('markAsDelivered', [
+            'token' => $token,
             'response' => $response->json(),
         ]);
 
@@ -57,6 +58,9 @@ class DigisellerService
         $platiToken = PlatiTokens::where('expire_time', '<', now())->value('token');
 
         if ($platiToken) {
+            Log::info('token token token', [
+            'response' => $platiToken,
+        ]);
             return $platiToken;
         } else {
             $timestamp = time();
