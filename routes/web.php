@@ -54,3 +54,6 @@ Route::get('/members', function () {
 Route::get('/payment/verify', function () {
     return view('payment.verify');
 })->name('payment.verify');
+Route::get('/test', function () {
+    return time();
+});

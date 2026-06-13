@@ -55,8 +55,9 @@ class DigisellerService
 
     private function getToken()
     {
-        $platiToken = PlatiTokens::where('expire_time', '>', time())->value('token');
-
+        $platiToken = PlatiTokens::where('expire_time', '>', now())
+            ->value('token');
+            
         Log::info('token token token', [
             'platiToken' => $platiToken,
         ]);
