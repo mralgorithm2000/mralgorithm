@@ -24,7 +24,7 @@ class PaymentVerificationController extends Controller
                 'order_id' => $verification['inv'],
                 'message' => __('payment.started_or_finished'),
             ]);
-        }
+        }   
 
         $job = $this->doTheJob($verification['id_goods'], $verification['cnt_goods'], $verification['options'], $verification['inv']);
 
