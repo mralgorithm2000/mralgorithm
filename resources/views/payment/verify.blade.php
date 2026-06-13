@@ -257,7 +257,9 @@
                 } else {
 
                     resultMessage.className = 'error';
-                    try_again.style.display = 'block';
+                    if (response?.show_try_again != false) {
+                        try_again.style.display = 'block';
+                    }
                     resultMessage.innerText =
                         data.message ||
                         "{{ __('payment.error') }}";

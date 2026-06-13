@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Option;
 use App\Models\Order;
-use App\Models\Service;
 use App\Models\SmService;
 use App\Services\DigisellerService;
 use Illuminate\Http\Request;
@@ -14,13 +13,24 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentVerificationController extends Controller
 {
-    public function verify(Request $request){
-        $digiseller = new DigisellerService();
+    public function verify(Request $request)
+    {
+        $digiseller = new DigisellerService;
         $verification = $digiseller->verifyPurchase($request->post('uniquecode'));
 
-        $job = $this->doTheJob($verification['id_goods'], $verification['cnt_goods'],$verification['options'],$verification['inv']);
+        $info = $digiseller->getPurchaseInfo($verification['inv']);
+        if ($info['content']['date_delivery'] != null) {
+            return response()->json([
+                'success' => false,
+                'show_try_again' => false,
+                'message' => __('payment.started_or_finished'),
+            ]);
+        }
+
+        $job = $this->doTheJob($verification['id_goods'], $verification['cnt_goods'], $verification['options'], $verification['inv']);
 
         $digiseller->markAsDelivered($request->post('uniquecode'));
+
         return response()->json([
             'success' => true,
             'order_id' => $job['user_code'],
@@ -28,21 +38,21 @@ class PaymentVerificationController extends Controller
         ]);
     }
 
-    private function doTheJob($service_id,$quantity, $options, $invoice_id){
+    private function doTheJob($service_id, $quantity, $options, $invoice_id)
+    {
         $optionsArr = [];
 
-        foreach($options as $option){
+        foreach ($options as $option) {
             $optionsArr[$option['id']] = $option['variant_id'] ?? $option['value'];
         }
 
-        $serviceTypeId = Option::where('plati_id',$service_id)->where('type','service_type')->value('option_id');
-        $serviceLinkId = Option::where('plati_id',$service_id)->where('type','link')->value('option_id');
+        $serviceTypeId = Option::where('plati_id', $service_id)->where('type', 'service_type')->value('option_id');
+        $serviceLinkId = Option::where('plati_id', $service_id)->where('type', 'link')->value('option_id');
 
         $link = $optionsArr[$serviceLinkId];
         $plati_id = $optionsArr[$serviceTypeId];
 
-        $serviceId = SmService::where('plati_id',$plati_id)->value('api_id');
-
+        $serviceId = SmService::where('plati_id', $plati_id)->value('api_id');
 
         $order = Order::create([
             'status' => 'init',
@@ -51,12 +61,12 @@ class PaymentVerificationController extends Controller
             'api_id' => $plati_id,
             'service_id' => $serviceId,
             'user_code' => $this->makeUniqueRandId(),
-            'invoice_id' => $invoice_id
+            'invoice_id' => $invoice_id,
         ]);
 
-        Log::info('hi oreder',[
+        Log::info('hi oreder', [
             'serviceLinkId' => $serviceLinkId,
-            'order' => $order
+            'order' => $order,
         ]);
 
         return [
@@ -74,38 +84,41 @@ class PaymentVerificationController extends Controller
         if ($response->successful()) {
             $result = $response->json();
 
-
-            if(isset($result['order'])){
+            if (isset($result['order'])) {
                 Order::where('id', $order->id)->update([
                     'order_id' => $result['order'],
-                    'status' => $result['status']
+                    'status' => $result['status'],
                 ]);
-            }else{
+            } else {
                 Order::where('id', $order->id)->update([
                     'status' => 'failed',
-                    'error' => $result['error']
+                    'error' => $result['error'],
                 ]);
             }
+
             return $result;
         } else {
             Order::where('id', $order->id)->update([
                 'status' => 'failed',
-                'error' => $response->body()
+                'error' => $response->body(),
             ]);
         }
+
         return [
             'user_code' => $order->user_code,
         ];
     }
 
-    private function makeUniqueRandId(){
-        $randid = rand(1000000,9999999);
+    private function makeUniqueRandId()
+    {
+        $randid = rand(1000000, 9999999);
 
-        $order = Order::where('user_code',$randid)->first();
+        $order = Order::where('user_code', $randid)->first();
 
-        if($order){
+        if ($order) {
             return $this->makeUniqueRandId();
         }
+
         return $randid;
     }
 }

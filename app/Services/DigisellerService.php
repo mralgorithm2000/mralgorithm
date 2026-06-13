@@ -35,7 +35,7 @@ class DigisellerService
         $token = $this->getToken();
 
         $response = Http::acceptJson()->put(
-            "https://api.digiseller.com/api/purchases/unique-code/{$uniqueCode}/deliver?token=" . $token,
+            "https://api.digiseller.com/api/purchases/unique-code/{$uniqueCode}/deliver?token=".$token,
             [
                 'token' => $token,
             ]
@@ -57,9 +57,9 @@ class DigisellerService
     {
         $platiToken = PlatiTokens::where('expire_time', '>', time())->value('token');
 
-          Log::info('token token token', [
-                'platiToken' => $platiToken,
-            ]);
+        Log::info('token token token', [
+            'platiToken' => $platiToken,
+        ]);
 
         if ($platiToken) {
             Log::info('token token token', [
@@ -94,5 +94,27 @@ class DigisellerService
 
             return $data['token'];
         }
+    }
+
+    public function getPurchaseInfo(int|string $invoiceId): array
+    {
+        $token = $this->getToken();
+
+        $response = Http::get(
+            "https://api.digiseller.com/api/purchase/info/{$invoiceId}",
+            [
+                'token' => $token,
+            ]
+        );
+
+        Log::info('token_date', [
+            'date' => $response->json(),
+        ]);
+
+        if (! $response->successful()) {
+            throw new \Exception('Failed to get purchase information.');
+        }
+
+        return $response->json();
     }
 }
