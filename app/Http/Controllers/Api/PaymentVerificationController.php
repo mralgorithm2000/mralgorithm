@@ -21,7 +21,7 @@ class PaymentVerificationController extends Controller
         if ($verification['unique_code_state']['date_delivery'] != null) {
             return response()->json([
                 'success' => true,
-                'order_id' => => $verification['inv'],
+                'order_id' => $verification['inv'],
                 'message' => __('payment.started_or_finished'),
             ]);
         }
