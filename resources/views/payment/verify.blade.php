@@ -148,10 +148,6 @@
             {{-- Order ID --}}
             <div id="order-id-container" style="display:none; margin-top:20px;">
 
-                <p class="message">
-                    {{ __('payment.copy_order_message') }}
-                </p>
-
                 <div class="order-box">
                     <span id="order-id-value" class="order-id"></span>
 
@@ -238,8 +234,7 @@
                 if (response.ok && data.success) {
 
                     resultMessage.className = 'success';
-                    resultMessage.innerText =
-                        "{{ __('payment.success') }}";
+                    resultMessage.innerText = data.message;
 
                     if (data.order_id) {
 
