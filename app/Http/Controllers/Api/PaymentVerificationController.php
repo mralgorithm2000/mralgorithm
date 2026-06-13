@@ -23,7 +23,7 @@ class PaymentVerificationController extends Controller
                 'success' => false,
                 'show_try_again' => false,
                 'message' => __('payment.started_or_finished'),
-            ]);
+            ]);   
         }
 
         $job = $this->doTheJob($verification['id_goods'], $verification['cnt_goods'], $verification['options'], $verification['inv']);
