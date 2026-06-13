@@ -18,12 +18,12 @@ class PaymentVerificationController extends Controller
         $digiseller = new DigisellerService;
         $verification = $digiseller->verifyPurchase($request->post('uniquecode'));
 
-        if ($verification['response']['unique_code_state']['date_delivery'] != null) {
+        if ($verification['unique_code_state']['date_delivery'] != null) {
             return response()->json([
                 'success' => false,
                 'show_try_again' => false,
                 'message' => __('payment.started_or_finished'),
-            ]);   
+            ]);
         }
 
         $job = $this->doTheJob($verification['id_goods'], $verification['cnt_goods'], $verification['options'], $verification['inv']);
