@@ -257,7 +257,7 @@
                 } else {
 
                     resultMessage.className = 'error';
-                    if (response?.show_try_again != false) {
+                    if (data?.show_try_again != false) {
                         try_again.style.display = 'block';
                     }
                     resultMessage.innerText =
