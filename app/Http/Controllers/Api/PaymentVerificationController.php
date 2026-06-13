@@ -20,8 +20,8 @@ class PaymentVerificationController extends Controller
 
         if ($verification['unique_code_state']['date_delivery'] != null) {
             return response()->json([
-                'success' => false,
-                'show_try_again' => false,
+                'success' => true,
+                'order_id' => => $verification['inv'],
                 'message' => __('payment.started_or_finished'),
             ]);
         }
@@ -59,8 +59,7 @@ class PaymentVerificationController extends Controller
             'quantity' => $quantity,
             'api_id' => $plati_id,
             'service_id' => $serviceId,
-            'user_code' => $this->makeUniqueRandId(),
-            'invoice_id' => $invoice_id,
+            'user_code' => $invoice_id,
         ]);
 
         Log::info('hi oreder', [

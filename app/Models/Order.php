@@ -16,7 +16,5 @@ class Order extends Model
         'quantity',
         'error',
         'user_code',
-        'unique_code',
-        'marked_as_delivered'
     ];
 }
