@@ -22,7 +22,7 @@ class PaymentVerificationController extends Controller
             return response()->json([
                 'success' => true,
                 'order_id' => $verification['inv'],
-                'message' => __('payment.started_or_finished'),
+                'message' => __('payment.started_or_finished'),  
             ]);
         }
 
