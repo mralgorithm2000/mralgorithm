@@ -32,7 +32,7 @@ class PaymentVerificationController extends Controller
 
         return response()->json([
             'success' => true,
-            'order_id' => $job['user_code'],
+            'order_id' => $verification['inv'],
             'message' => __('payment.success'),
         ]);
     }
@@ -74,6 +74,10 @@ class PaymentVerificationController extends Controller
             'link' => $link,
             'quantity' => $quantity,
             'is_test' => 0,
+        ]);
+
+        Log::info('api response', [
+            'response' => $response->json(),
         ]);
 
         if ($response->successful()) {
