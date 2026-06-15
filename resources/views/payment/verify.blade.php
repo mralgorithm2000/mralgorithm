@@ -163,7 +163,7 @@
             </div>
 
             {{-- Status Button --}}
-            <a id="status-button" href="/orders/status" class="btn" style="display:none;">
+            <a id="status-button" href="/order/status" class="btn" style="display:none;">
                 {{ __('payment.status_button') }}
             </a>
 
