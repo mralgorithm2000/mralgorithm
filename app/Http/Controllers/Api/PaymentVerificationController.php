@@ -18,7 +18,7 @@ class PaymentVerificationController extends Controller
         $digiseller = new DigisellerService;
         $verification = $digiseller->verifyPurchase($request->post('uniquecode'));
 
-        if ($verification['unique_code_state']['date_delivery'] != null) {
+        if (@$verification['unique_code_state']['date_delivery'] != null) {
             return response()->json([
                 'success' => true,
                 'order_id' => $verification['inv'],
