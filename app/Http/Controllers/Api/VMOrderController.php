@@ -47,7 +47,7 @@ class VMOrderController extends Controller
 
         return [
             'number' => $number['number'],
-            'country' => $number['country'],
+            'country_code' => $number['country_code'],
         ];
     }
 
