@@ -285,7 +285,7 @@
             <div class="copy-box">
 
                 <div class="value" id="phone">
-                    +44 7412 345678
+                    7412 345678
                 </div>
 
                 <button class="copy-btn" onclick="copyText('phone')">
