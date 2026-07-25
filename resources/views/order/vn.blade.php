@@ -748,6 +748,7 @@
                 resultSection.style.display = 'block';
 
                 if (response.ok && data.success) {
+                    console.log("bye");
 
                     setTimeout(() => {
 
@@ -770,12 +771,14 @@
                         }, 500);
 
                     }, 2500);
+                     console.log("bye bye");
 
                     document.getElementById('phone').innerText = data.data.number;
                     document.getElementById('country').innerText = data.data.country_code;
 
+                      console.log("bye bye bye");
                 } else {
-
+                    console.log("hi");
                 }
 
             } catch (error) {
