@@ -771,8 +771,8 @@
 
                     }, 2500);
 
-                    document.getElementById('phone').innerText = data.number;
-                    document.getElementById('country').innerText = data.country_code;
+                    document.getElementById('phone').innerText = data.data.number;
+                    document.getElementById('country').innerText = data.data.country_code;
 
                 } else {
 
