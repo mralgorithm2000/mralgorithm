@@ -705,82 +705,99 @@
 
 
 
-
         document.addEventListener('DOMContentLoaded', async () => {
 
             const uniqueCode = new URLSearchParams(window.location.search)
                 .get('uniquecode');
 
+            if (!uniqueCode) {
+                console.error('Unique code missing');
+                return;
+            }
+
             try {
 
-                const response = await fetch(
-                    '{{ url('/api/vm/verify') }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            uniquecode: uniqueCode
-                        })
-                    }
-                );
-
-                 setTimeout(() => {
-
-                    complete(0);
-
-                    activate(1);
-
-                }, 1200);
-
-                setTimeout(() => {
-
-                    complete(1);
-
-                    activate(2);
-
-                }, 1500);
+                const response = await fetch('{{ url('/api/vm/verify') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        uniquecode: uniqueCode
+                    })
+                });
 
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    console.log("bye");
+
+                    setTimeout(() => {
+                        complete(0);
+                        activate(1);
+                    }, 1200);
+
+                    setTimeout(() => {
+                        complete(1);
+                        activate(2);
+                    }, 1500);
 
                     setTimeout(() => {
 
                         complete(2);
 
-                        document.querySelector('.loader').style.borderTopColor = '#10b981';
+                        const loader = document.querySelector('.loader');
+                        if (loader) {
+                            loader.style.borderTopColor = '#10b981';
+                        }
 
                     }, 2000);
 
+
                     setTimeout(() => {
 
-                        document.getElementById('verifyScreen').classList.add('fadeOut');
+                        const verifyScreen = document.getElementById('verifyScreen');
+                        const content = document.getElementById('content');
 
-                        setTimeout(() => {
+                        if (verifyScreen) {
+                            verifyScreen.classList.add('fadeOut');
 
-                            document.getElementById('verifyScreen').remove();
+                            setTimeout(() => {
+                                verifyScreen.remove();
 
-                            document.getElementById('content').style.display = 'block';
+                                if (content) {
+                                    content.style.display = 'block';
+                                }
 
-                        }, 500);
+                            }, 500);
+                        }
 
                     }, 2500);
-                     console.log("bye bye");
 
-                    document.getElementById('phone').innerText = data.data.number;
-                    document.getElementById('country').innerText = data.data.country_code;
 
-                      console.log("bye bye bye");
+                    const phone = document.getElementById('phone');
+                    const country = document.getElementById('country');
+
+                    if (phone) {
+                        phone.innerText = data.data.number;
+                    }
+
+                    if (country) {
+                        country.innerText = data.data.country_code;
+                    }
+
                 } else {
-                    console.log("hi");
+
+                    console.error('Verification failed:', data.message || data);
+
                 }
 
             } catch (error) {
-                console.log(error);
+
+                console.error('API Error:', error);
+
             }
+
         });
     </script>
 
