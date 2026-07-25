@@ -20,4 +20,14 @@ return [
 
     'copied' => 'Copied successfully!',
 
+    'verifying_payment' => 'Verifying your payment',
+
+    'verifying_payment_description' => 'Please wait while we securely verify your payment. This usually takes just a few seconds.',
+
+    'step_payment_received' => 'Payment received',
+
+    'step_transaction' => 'Verifying transaction',
+
+    'step_preparing' => 'Preparing your virtual number',
+
 ];

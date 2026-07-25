@@ -264,107 +264,261 @@
             transition: .2s;
 
         }
+
+        #verifyScreen {
+
+            position: fixed;
+            inset: 0;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            background: linear-gradient(135deg, #fff5fb, #eef7ff);
+
+            z-index: 9999;
+
+            transition: .5s;
+
+        }
+
+        .verify-card {
+
+            width: 520px;
+            max-width: 95%;
+
+            background: white;
+
+            padding: 40px;
+
+            border-radius: 26px;
+
+            box-shadow: 0 25px 60px rgba(0, 0, 0, .08);
+
+        }
+
+        .verify-card h1 {
+
+            font-size: 30px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+
+            color: #374151;
+
+            text-align: center;
+
+        }
+
+        .verify-subtitle {
+
+            text-align: center;
+
+            color: #6b7280;
+
+            margin-bottom: 35px;
+
+            line-height: 1.7;
+
+        }
+
+        .verify-icon {
+
+            display: flex;
+            justify-content: center;
+
+        }
+
+        .loader {
+
+            width: 70px;
+            height: 70px;
+
+            border-radius: 50%;
+
+            border: 5px solid #ececec;
+
+            border-top-color: #8b5cf6;
+
+            animation: spin .9s linear infinite;
+
+        }
+
+        .steps {
+
+            display: flex;
+            flex-direction: column;
+
+            gap: 15px;
+
+        }
+
+        .step {
+
+            display: flex;
+            align-items: center;
+
+            gap: 15px;
+
+            padding: 18px;
+
+            border-radius: 14px;
+
+            background: #fafafa;
+
+            color: #9ca3af;
+
+            transition: .35s;
+
+        }
+
+        .step.active {
+
+            background: #eef2ff;
+
+            color: #4338ca;
+
+        }
+
+        .step.done {
+
+            background: #ecfdf5;
+
+            color: #059669;
+
+        }
+
+        .step span {
+
+            flex: 1;
+
+            font-weight: 600;
+
+        }
+
+        .spinner-icon {
+
+            display: none;
+
+        }
+
+        .step.active .spinner-icon {
+
+            display: block;
+
+        }
+
+        .success-icon {
+
+            display: none;
+
+            color: #10b981;
+
+        }
+
+        .step.done .success-icon {
+
+            display: block;
+
+        }
+
+        .step.done .spinner-icon {
+
+            display: none;
+
+        }
+
+        .fadeOut {
+
+            opacity: 0;
+            visibility: hidden;
+
+        }
+
+        @keyframes spin {
+
+            to {
+
+                transform: rotate(360deg);
+
+            }
+
+        }
     </style>
 
 </head>
 
 <body>
 
-    <div class="card">
+    <div id="verifyScreen">
 
-        <h1>@lang('sms.title')</h1>
+        <div class="verify-card">
 
-        <div class="section">
-
-            <div class="label">
-
-                @lang('sms.phone_number')
-
+            <div class="verify-icon">
+                <div class="loader"></div>
             </div>
 
-            <div class="copy-box">
+            <h1>@lang('sms.verifying_payment')</h1>
 
-                <div class="value" id="phone">
-                    7412 345678
+            <p class="verify-subtitle">
+                @lang('sms.verifying_payment_description')
+            </p>
+
+            <div class="steps">
+
+                <div class="step active" id="step1">
+                    <i class="fa-solid fa-credit-card"></i>
+
+                    <span>@lang('sms.step_payment_received')</span>
+
+                    <i class="fa-solid fa-circle-notch fa-spin spinner-icon"></i>
+
+                    <i class="fa-solid fa-check success-icon"></i>
                 </div>
 
-                <button class="copy-btn" onclick="copyText('phone')">
+                <div class="step" id="step2">
+                    <i class="fa-solid fa-shield-halved"></i>
 
-                    <i class="fa-regular fa-copy"></i>
+                    <span>@lang('sms.step_transaction')</span>
 
-                </button>
+                    <i class="fa-solid fa-circle-notch fa-spin spinner-icon"></i>
 
-            </div>
-
-        </div>
-
-        <div class="section">
-
-            <div class="label">
-
-                @lang('sms.country_code')
-
-            </div>
-
-            <div class="copy-box">
-
-                <div class="value" id="country">
-                    +44
+                    <i class="fa-solid fa-check success-icon"></i>
                 </div>
 
-                <button class="copy-btn" onclick="copyText('country')">
+                <div class="step" id="step3">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
 
-                    <i class="fa-regular fa-copy"></i>
+                    <span>@lang('sms.step_preparing')</span>
 
-                </button>
+                    <i class="fa-solid fa-circle-notch fa-spin spinner-icon"></i>
 
+                    <i class="fa-solid fa-check success-icon"></i>
+                </div>
             </div>
-
         </div>
+    </div>
 
-        <div class="timer" id="timer">
 
-            20:00
+    <div id="content" style="display:none">
+        <div class="card">
 
-        </div>
+            <h1>@lang('sms.title')</h1>
 
-        <div class="sms-area">
-
-            <div id="loading">
-
-                <h3>
-
-                    @lang('sms.waiting')
-
-                </h3>
-
-                <div class="spinner"></div>
-
-                <p>
-
-                    @lang('sms.waiting_description')
-
-                </p>
-
-            </div>
-
-            <div class="sms-code" id="smsCode">
+            <div class="section">
 
                 <div class="label">
 
-                    @lang('sms.received_code')
+                    @lang('sms.phone_number')
 
                 </div>
 
                 <div class="copy-box">
 
-                    <div class="sms-value" id="code">
-
-                        582341
-
+                    <div class="value" id="phone">
+                        7412 345678
                     </div>
 
-                    <button class="copy-btn" onclick="copyText('code')">
+                    <button class="copy-btn" onclick="copyText('phone')">
 
                         <i class="fa-regular fa-copy"></i>
 
@@ -374,18 +528,95 @@
 
             </div>
 
+            <div class="section">
+
+                <div class="label">
+
+                    @lang('sms.country_code')
+
+                </div>
+
+                <div class="copy-box">
+
+                    <div class="value" id="country">
+                        +44
+                    </div>
+
+                    <button class="copy-btn" onclick="copyText('country')">
+
+                        <i class="fa-regular fa-copy"></i>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div class="timer" id="timer">
+
+                20:00
+
+            </div>
+
+            <div class="sms-area">
+
+                <div id="loading">
+
+                    <h3>
+
+                        @lang('sms.waiting')
+
+                    </h3>
+
+                    <div class="spinner"></div>
+
+                    <p>
+
+                        @lang('sms.waiting_description')
+
+                    </p>
+
+                </div>
+
+                <div class="sms-code" id="smsCode">
+
+                    <div class="label">
+
+                        @lang('sms.received_code')
+
+                    </div>
+
+                    <div class="copy-box">
+
+                        <div class="sms-value" id="code">
+
+                            582341
+
+                        </div>
+
+                        <button class="copy-btn" onclick="copyText('code')">
+
+                            <i class="fa-regular fa-copy"></i>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="notice">
+
+                <strong>@lang('sms.not_received')</strong>
+
+                <br><br>
+
+                @lang('sms.contact')
+
+            </div>
+
         </div>
-
-        <div class="notice">
-
-            <strong>@lang('sms.not_received')</strong>
-
-            <br><br>
-
-            @lang('sms.contact')
-
-        </div>
-
     </div>
 
     <div class="toast" id="toast">
@@ -448,6 +679,66 @@
             document.getElementById("ding").play();
 
         }, 10000);
+
+        const steps = [
+            document.getElementById('step1'),
+            document.getElementById('step2'),
+            document.getElementById('step3')
+        ];
+
+        function activate(index) {
+
+            steps.forEach(s => s.classList.remove('active'));
+
+            steps[index].classList.add('active');
+
+        }
+
+        function complete(index) {
+
+            steps[index].classList.remove('active');
+
+            steps[index].classList.add('done');
+
+        }
+
+        setTimeout(() => {
+
+            complete(0);
+
+            activate(1);
+
+        }, 1200);
+
+        setTimeout(() => {
+
+            complete(1);
+
+            activate(2);
+
+        }, 2600);
+
+        setTimeout(() => {
+
+            complete(2);
+
+            document.querySelector('.loader').style.borderTopColor = '#10b981';
+
+        }, 3900);
+
+        setTimeout(() => {
+
+            document.getElementById('verifyScreen').classList.add('fadeOut');
+
+            setTimeout(() => {
+
+                document.getElementById('verifyScreen').remove();
+
+                document.getElementById('content').style.display = 'block';
+
+            }, 500);
+
+        }, 4700);
     </script>
 
 </body>
