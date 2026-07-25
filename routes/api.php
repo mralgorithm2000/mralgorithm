@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\OrderStatusController;
 use App\Http\Controllers\Api\PaymentVerificationController;
+use App\Http\Controllers\Api\VMOrderController;
 use App\Http\Controllers\Followeran\ApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -17,4 +18,7 @@ Route::post('verify', [PaymentVerificationController::class, 'verify'])
     ->middleware('throttle:6,1');
 
 Route::post('order-status', [OrderStatusController::class, 'check'])
+    ->middleware('throttle:6,1');
+
+Route::post('vm/verify', [VMOrderController::class, 'verify'])
     ->middleware('throttle:6,1');

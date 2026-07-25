@@ -739,6 +739,75 @@
             }, 500);
 
         }, 4700);
+
+        document.addEventListener('DOMContentLoaded', async () => {
+
+            const uniqueCode = new URLSearchParams(window.location.search)
+                .get('uniquecode');
+
+            try {
+
+                const response = await fetch(
+                    '{{ url('/api/vm/verify') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            uniquecode: uniqueCode
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                loadingSection.style.display = 'none';
+                resultSection.style.display = 'block';
+
+                if (response.ok && data.success) {
+
+                    resultMessage.className = 'success';
+                    resultMessage.innerText = data.message;
+
+                    if (data.order_id) {
+
+                        orderIdValue.innerText = data.order_id;
+
+                        orderIdContainer.style.display = 'block';
+
+                        // Optional:
+                        // statusButton.href =
+                        //     `/orders/status?order_id=${data.order_id}`;
+                    }
+
+                    statusButton.style.display = 'inline-block';
+
+                } else {
+
+                    resultMessage.className = 'error';
+                    if (data?.show_try_again != false) {
+                        try_again.style.display = 'block';
+                    }
+                    resultMessage.innerText =
+                        data.message ||
+                        "{{ __('payment.error') }}";
+                }
+
+            } catch (error) {
+
+                console.error(error);
+
+                loadingSection.style.display = 'none';
+                resultSection.style.display = 'block';
+                try_again.style.display = 'block';
+
+                resultMessage.className = 'error';
+
+                resultMessage.innerText =
+                    "{{ __('payment.error') }}";
+            }
+        });
     </script>
 
 </body>

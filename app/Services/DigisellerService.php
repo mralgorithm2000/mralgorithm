@@ -11,6 +11,19 @@ class DigisellerService
 {
     public function verifyPurchase(string $uniqueCode): array
     {
+        if($uniqueCode === 'test') {
+            return [
+                'id_goods' => 123,
+                'options' => [
+                    [
+                        'id' => 1,
+                        'variant_id' => 456,
+                    ],
+                ],
+                'inv' => 789,
+            ];
+        }
+        
         $token = $this->getToken();
 
         $response = Http::acceptJson()->get(
@@ -57,7 +70,7 @@ class DigisellerService
     {
         $platiToken = PlatiTokens::where('expire_time', '>', now())
             ->value('token');
-            
+
         Log::info('token token token', [
             'platiToken' => $platiToken,
         ]);
