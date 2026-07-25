@@ -702,43 +702,9 @@
 
         }
 
-        setTimeout(() => {
 
-            complete(0);
 
-            activate(1);
 
-        }, 1200);
-
-        setTimeout(() => {
-
-            complete(1);
-
-            activate(2);
-
-        }, 2600);
-
-        setTimeout(() => {
-
-            complete(2);
-
-            document.querySelector('.loader').style.borderTopColor = '#10b981';
-
-        }, 3900);
-
-        setTimeout(() => {
-
-            document.getElementById('verifyScreen').classList.add('fadeOut');
-
-            setTimeout(() => {
-
-                document.getElementById('verifyScreen').remove();
-
-                document.getElementById('content').style.display = 'block';
-
-            }, 500);
-
-        }, 4700);
 
         document.addEventListener('DOMContentLoaded', async () => {
 
@@ -760,6 +726,22 @@
                     }
                 );
 
+                 setTimeout(() => {
+
+                    complete(0);
+
+                    activate(1);
+
+                }, 1200);
+
+                setTimeout(() => {
+
+                    complete(1);
+
+                    activate(2);
+
+                }, 1500);
+
                 const data = await response.json();
 
                 loadingSection.style.display = 'none';
@@ -767,45 +749,37 @@
 
                 if (response.ok && data.success) {
 
-                    resultMessage.className = 'success';
-                    resultMessage.innerText = data.message;
+                    setTimeout(() => {
 
-                    if (data.order_id) {
+                        complete(2);
 
-                        orderIdValue.innerText = data.order_id;
+                        document.querySelector('.loader').style.borderTopColor = '#10b981';
 
-                        orderIdContainer.style.display = 'block';
+                    }, 2000);
 
-                        // Optional:
-                        // statusButton.href =
-                        //     `/orders/status?order_id=${data.order_id}`;
-                    }
+                    setTimeout(() => {
 
-                    statusButton.style.display = 'inline-block';
+                        document.getElementById('verifyScreen').classList.add('fadeOut');
+
+                        setTimeout(() => {
+
+                            document.getElementById('verifyScreen').remove();
+
+                            document.getElementById('content').style.display = 'block';
+
+                        }, 500);
+
+                    }, 2500);
+
+                    document.getElementById('phone').innerText = data.phone;
+                    document.getElementById('country').innerText = data.country_code;
 
                 } else {
 
-                    resultMessage.className = 'error';
-                    if (data?.show_try_again != false) {
-                        try_again.style.display = 'block';
-                    }
-                    resultMessage.innerText =
-                        data.message ||
-                        "{{ __('payment.error') }}";
                 }
 
             } catch (error) {
 
-                console.error(error);
-
-                loadingSection.style.display = 'none';
-                resultSection.style.display = 'block';
-                try_again.style.display = 'block';
-
-                resultMessage.className = 'error';
-
-                resultMessage.innerText =
-                    "{{ __('payment.error') }}";
             }
         });
     </script>
