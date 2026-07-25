@@ -515,7 +515,7 @@
                 <div class="copy-box">
 
                     <div class="value" id="phone">
-                        7412 345678
+
                     </div>
 
                     <button class="copy-btn" onclick="copyText('phone')">
@@ -539,7 +539,7 @@
                 <div class="copy-box">
 
                     <div class="value" id="country">
-                        +44
+
                     </div>
 
                     <button class="copy-btn" onclick="copyText('country')">
@@ -771,7 +771,7 @@
 
                     }, 2500);
 
-                    document.getElementById('phone').innerText = data.phone;
+                    document.getElementById('phone').innerText = data.number;
                     document.getElementById('country').innerText = data.country_code;
 
                 } else {

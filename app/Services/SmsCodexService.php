@@ -8,7 +8,7 @@ class SmsCodexService
     public function getNumber(){
         return [
             'number' => '123456789',
-            'country' => '+1',
+            'country_code' => '+1',
         ];
     }
 }
