@@ -744,9 +744,6 @@
 
                 const data = await response.json();
 
-                loadingSection.style.display = 'none';
-                resultSection.style.display = 'block';
-
                 if (response.ok && data.success) {
                     console.log("bye");
 
