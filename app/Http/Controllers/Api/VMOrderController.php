@@ -90,6 +90,6 @@ class VMOrderController extends Controller
     private function dateToMinutes($date){
         $now = Carbon::now();
         $expires = Carbon::parse($date);
-        return $expires->diffInMinutes($now);
+        return $now->diffInMinutes($expires);
     }
 }

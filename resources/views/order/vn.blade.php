@@ -859,7 +859,7 @@
                             total--;
                             updateTimer();
                         }, 1000);
-                    }
+ ./                    }
 
                 } else {
 
