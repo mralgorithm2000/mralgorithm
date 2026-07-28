@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\NumberOrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\NumberOrder;
 use App\Models\Option;
@@ -26,6 +27,8 @@ class VMOrderController extends Controller
         if($order){
             $service = $order->service;
             $serviceDetails = $this->getServiceDetails($service->type);
+            $statusDetails = $this->getStatusDetails($order->status);
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -34,6 +37,8 @@ class VMOrderController extends Controller
                     'expires_at' => $this->dateToMinutes($order->expires_at),
                     'serviceName' => $serviceDetails['name'],
                     'serviceIcon' => $serviceDetails['icon'],
+                    'status' => $statusDetails['value'],
+                    'statusLabel' => $statusDetails['label'],
                 ],
                 'message' => __('payment.success'),
             ]);
@@ -69,7 +74,8 @@ class VMOrderController extends Controller
         $serviceInstance = new $serviceClass();
         $number = $serviceInstance->getNumber();
 
-        $this->saveOrder($number['number'], $number['country_code'], 20, $service->id, $invoice_id);
+        $order = $this->saveOrder($number['number'], $number['country_code'], 20, $service->id, $invoice_id);
+        $statusDetails = $this->getStatusDetails($order->status);
 
         return [
             'number' => $number['number'],
@@ -77,6 +83,19 @@ class VMOrderController extends Controller
             'expires_at' => $this->dateToMinutes(Carbon::now()->addMinutes(20)),
             'serviceName' => $serviceDetails['name'],
             'serviceIcon' => $serviceDetails['icon'],
+            'status' => $statusDetails['value'],
+            'statusLabel' => $statusDetails['label'],
+        ];
+    }
+
+    private function getStatusDetails(?string $status): array
+    {
+        $orderStatus = NumberOrderStatus::tryFrom((string) $status)
+            ?? NumberOrderStatus::WAITING;
+
+        return [
+            'value' => $orderStatus->value,
+            'label' => $orderStatus->label(),
         ];
     }
 
