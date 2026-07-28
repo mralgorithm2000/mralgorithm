@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\NumberOrder;
 use App\Models\Option;
 use App\Models\VirtualNumber;
 use App\Services\DigisellerService;
@@ -20,24 +19,6 @@ class VMOrderController extends Controller
     {
         $digiseller = new DigisellerService();
         $verification = $digiseller->verifyPurchase($request->post('uniquecode'));
-
-        $NumberOrder = NumberOrder::where('plati_order_id', $verification['inv'])->first();
-
-        if($NumberOrder){
-            $service = $this->getServiceDetails($NumberOrder->virtualNumber?->type);
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'number' => $NumberOrder->phone_number,
-                    'country_code' => $NumberOrder->country_code,
-                    'expires_at' => $this->dateToMinutes($NumberOrder->expires_at),
-                    'serviceName' => $service['name'],
-                    'serviceIcon' => $service['icon'],
-                ],
-                'message' => __('payment.success'),
-            ]);
-        }
 
         $job = $this->doTheJob($verification['id_goods'], $verification['options'], $verification['inv']);
 
@@ -66,8 +47,6 @@ class VMOrderController extends Controller
         $serviceClass = $this->getSourceService($service->source);
         $serviceInstance = new $serviceClass();
         $number = $serviceInstance->getNumber();
-
-        $this->saveOrder($service['id'], $invoice_id, $number['number'], $number['country_code']);
 
         return [
             'number' => $number['number'],
@@ -106,16 +85,6 @@ class VMOrderController extends Controller
             case 'numberland':
                 return NumberlandService::class;
         }
-    }
-
-    private function saveOrder($virtual_number_id,$invoice_id,$number,$country){
-        NumberOrder::create([
-            'virtual_number_id' => $virtual_number_id,
-            'plati_order_id' => $invoice_id,
-            'phone_number' => $number,
-            'country_code' => $country,
-            'expires_at' => Carbon::now()->addMinutes(20)
-        ]);
     }
 
     private function dateToMinutes($date){
