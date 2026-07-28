@@ -836,7 +836,6 @@
                         serviceIcon.alt = data.data.serviceName || '';
                         serviceIcon.hidden = false;
                     }
-
                     if (data.data.expires_at > 0) {
                         let total = Number(data.data.expires_at);
 

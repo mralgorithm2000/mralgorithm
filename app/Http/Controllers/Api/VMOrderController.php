@@ -31,7 +31,7 @@ class VMOrderController extends Controller
                 'data' => [
                     'number' => $order->phone_number,
                     'country_code' => $order->country_code,
-                    'expires_at' => $this->dateToMinutes($order->expires_at),
+                    'expires_at' => $this->secondsRemaining($order->expires_at),
                     'serviceName' => $serviceDetails['name'],
                     'serviceIcon' => $serviceDetails['icon'],
                 ],
@@ -74,7 +74,7 @@ class VMOrderController extends Controller
         return [
             'number' => $number['number'],
             'country_code' => $number['country_code'],
-            'expires_at' => $this->dateToMinutes(Carbon::now()->addMinutes(20)),
+            'expires_at' => $this->secondsRemaining(Carbon::now()->addMinutes(20)),
             'serviceName' => $serviceDetails['name'],
             'serviceIcon' => $serviceDetails['icon'],
         ];
