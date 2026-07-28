@@ -113,6 +113,46 @@
 
         }
 
+        .service-box {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+            background: #f9fafb;
+
+            border: 2px solid #eef2ff;
+
+            border-radius: 14px;
+
+            padding: 12px 16px;
+
+        }
+
+        .service-icon {
+
+            width: 28px;
+
+            height: 28px;
+
+            object-fit: contain;
+
+            flex-shrink: 0;
+
+        }
+
+        .service-name {
+
+            font-size: 17px;
+
+            font-weight: 600;
+
+            color: #374151;
+
+        }
+
         .copy-btn {
 
             border: none;
@@ -532,6 +572,24 @@
 
                 <div class="label">
 
+                    Service
+
+                </div>
+
+                <div class="service-box">
+
+                    <img class="service-icon" id="serviceIcon" alt="" hidden>
+
+                    <div class="service-name" id="serviceName"></div>
+
+                </div>
+
+            </div>
+
+            <div class="section">
+
+                <div class="label">
+
                     @lang('sms.country_code')
 
                 </div>
@@ -650,26 +708,6 @@
 
         }
 
-        let total = 20 * 60;
-
-        setInterval(() => {
-
-            if (total <= 0) return;
-
-            total--;
-
-            let m = Math.floor(total / 60);
-
-            let s = total % 60;
-
-            document.getElementById("timer").innerHTML =
-
-                String(m).padStart(2, "0") + ":" +
-
-                String(s).padStart(2, "0");
-
-        }, 1000);
-
         setTimeout(() => {
 
             document.getElementById("loading").style.display = "none";
@@ -784,6 +822,43 @@
 
                     if (country) {
                         country.innerText = data.data.country_code;
+                    }
+
+                    const serviceName = document.getElementById('serviceName');
+                    const serviceIcon = document.getElementById('serviceIcon');
+
+                    if (serviceName) {
+                        serviceName.innerText = data.data.serviceName || '';
+                    }
+
+                    if (serviceIcon && data.data.serviceIcon) {
+                        serviceIcon.src = data.data.serviceIcon;
+                        serviceIcon.alt = data.data.serviceName || '';
+                        serviceIcon.hidden = false;
+                    }
+
+                    if (data.data.expires_at > 0) {
+                        let total = parseInt(data.data.expires_at) * 60;
+
+                        const timer = document.getElementById('timer');
+
+                        const updateTimer = () => {
+                            const minutes = Math.floor(total / 60);
+                            const seconds = total % 60;
+
+                            timer.innerText =
+                                String(minutes).padStart(2, '0') + ':' +
+                                String(seconds).padStart(2, '0');
+                        };
+
+                        updateTimer();
+
+                        setInterval(() => {
+                            if (total <= 0) return;
+
+                            total--;
+                            updateTimer();
+                        }, 1000);
                     }
 
                 } else {
