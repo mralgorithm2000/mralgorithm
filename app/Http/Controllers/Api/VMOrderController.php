@@ -111,7 +111,9 @@ class VMOrderController extends Controller
     }
 
     private function dateToMinutes($date){
-        return Carbon::now()->diffInMinutes(Carbon::parse($date), false);
+        $now = Carbon::now();
+        $expires = Carbon::parse($date);
+        return $now->diffInSeconds($expires) / 60;
     }
 
     private function saveOrder($number, $country_code, $expires_at, $service_id, $invoice_id)
