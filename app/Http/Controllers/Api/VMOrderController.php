@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\NumberOrder;
 use App\Models\Option;
 use App\Models\VirtualNumber;
 use App\Services\DigisellerService;
@@ -20,7 +21,27 @@ class VMOrderController extends Controller
         $digiseller = new DigisellerService();
         $verification = $digiseller->verifyPurchase($request->post('uniquecode'));
 
+        $order = NumberOrder::where('plati_order_id', $verification['inv'])->first();
+
+        if($order){
+            $service = $order->service;
+            $serviceDetails = $this->getServiceDetails($service->type);
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'number' => $order->phone_number,
+                    'country_code' => $order->country_code,
+                    'expires_at' => $this->dateToMinutes($order->expires_at),
+                    'serviceName' => $serviceDetails['name'],
+                    'serviceIcon' => $serviceDetails['icon'],
+                ],
+                'message' => __('payment.success'),
+            ]);
+        }
+
         $job = $this->doTheJob($verification['id_goods'], $verification['options'], $verification['inv']);
+
+
 
         return response()->json([
             'success' => true,
@@ -47,6 +68,8 @@ class VMOrderController extends Controller
         $serviceClass = $this->getSourceService($service->source);
         $serviceInstance = new $serviceClass();
         $number = $serviceInstance->getNumber();
+
+        $this->saveOrder($number['number'], $number['country_code'], 20, $service->id, $invoice_id);
 
         return [
             'number' => $number['number'],
@@ -91,5 +114,16 @@ class VMOrderController extends Controller
         $now = Carbon::now();
         $expires = Carbon::parse($date);
         return $now->diffInMinutes($expires);
+    }
+
+    private function saveOrder($number, $country_code, $expires_at, $service_id, $invoice_id)
+    {
+        return NumberOrder::create([
+            'virtual_number_id' => $service_id,
+            'plati_order_id' => $invoice_id,
+            'phone_number' => $number,
+            'country_code' => $country_code,
+            'expires_at' => Carbon::now()->addMinutes($expires_at),
+        ]);
     }
 }
