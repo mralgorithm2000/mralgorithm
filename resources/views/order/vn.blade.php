@@ -838,7 +838,7 @@
                     }
 
                     if (data.data.expires_at > 0) {
-                        let total = parseInt(data.data.expires_at) * 60;
+                        let total = Number(data.data.expires_at);
 
                         const timer = document.getElementById('timer');
 
@@ -853,14 +853,19 @@
 
                         updateTimer();
 
-                        setInterval(() => {
-                            if (total <= 0) return;
-
+                        const interval = setInterval(() => {
                             total--;
+
+                            if (total <= 0) {
+                                total = 0;
+                                updateTimer();
+                                clearInterval(interval);
+                                return;
+                            }
+
                             updateTimer();
                         }, 1000);
                     }
-
                 } else {
 
                     console.error('Verification failed:', data.message || data);
