@@ -844,7 +844,7 @@
                         const updateTimer = () => {
                             const minutes = Math.floor(total / 60);
                             const seconds = total % 60;
-
+                            seconds = Math.floor(seconds);
                             timer.innerText =
                                 String(minutes).padStart(2, '0') + ':' +
                                 String(seconds).padStart(2, '0');
