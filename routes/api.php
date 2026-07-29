@@ -18,7 +18,7 @@ Route::post('verify', [PaymentVerificationController::class, 'verify'])
     ->middleware('throttle:6,1');
 
 Route::post('order-status', [OrderStatusController::class, 'check'])
-    ->middleware('throttle:6,1');
+    ->middleware('throttle:6,1');    
 
 Route::post('vm/verify', [VMOrderController::class, 'verify'])
     ->middleware(['web', 'throttle:6,1']);
