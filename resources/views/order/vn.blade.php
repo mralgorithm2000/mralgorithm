@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="pusher-key" content="{{ config('broadcasting.connections.pusher.key') }}">
+    <meta name="pusher-cluster" content="{{ config('broadcasting.connections.pusher.options.cluster', 'mt1') }}">
     <title>@lang('sms.title')</title>
 
     @vite('resources/js/app.js')
@@ -701,6 +703,14 @@
         }
 
         function subscribeToSmsCode(orderId) {
+            if (!window.Echo) {
+                console.error(
+                    'Laravel Echo is unavailable. Configure the Pusher credentials and set BROADCAST_CONNECTION=pusher.'
+                );
+
+                return;
+            }
+
             window.Echo.private(`number-order.${orderId}`)
                 .listen('.sms.code.received', (event) => {
                     if (Number(event.order_id) !== Number(orderId)) {
