@@ -807,6 +807,7 @@
 
                     const phone = document.getElementById('phone');
                     const country = document.getElementById('country');
+                    const code = document.getElementById('code');
 
                     if (phone) {
                         phone.innerText = data.data.number;
@@ -814,6 +815,10 @@
 
                     if (country) {
                         country.innerText = data.data.country_code;
+                    }
+
+                    if(code) {
+                        code.innerText = data.data.sms_code || '';
                     }
 
                     const serviceName = document.getElementById('serviceName');
@@ -844,7 +849,7 @@
                         statusLabel.innerText = data.data.statusLabel || '';
                     }
 
-                    if (data.data.expires_at > 0) {
+                    if (data.data.expires_at > 0 && data.data.status === 'waiting') {
                         let total = Number(data.data.expires_at);
                         const timer = document.getElementById('timer');
 

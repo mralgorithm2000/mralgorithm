@@ -41,6 +41,7 @@ class VMOrderController extends Controller
                     'status' => $statusDetails['value'],
                     'statusLabel' => $statusDetails['label'],
                     'order_id' => $order->id,
+                    'sms_code' => $order->sms_code,
                 ],
                 'message' => __('payment.success'),
             ]);
