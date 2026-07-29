@@ -721,6 +721,7 @@
                     document.getElementById('smsCode').style.display = 'block';
                     document.getElementById('code').innerText = event.sms_code;
                     document.getElementById('ding').play().catch(() => {});
+                    document.getElementById('statusLabel').innerText = "Received";
                 });
         }
 
