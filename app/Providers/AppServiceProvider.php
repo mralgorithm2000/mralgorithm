@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use Illuminate\Auth\GenericUser;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +22,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Auth::viaRequest('order-session', function (Request $request): ?GenericUser {
+            if (! $request->session()->has('number_order_ids')) {
+                return null;
+            }
+
+            return new GenericUser([
+                'id' => $request->session()->getId(),
+            ]);
+        });
     }
 }

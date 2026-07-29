@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\OrderStatusController;
 use App\Http\Controllers\Api\PaymentVerificationController;
+use App\Http\Controllers\Api\SmsWebhookController;
 use App\Http\Controllers\Api\VMOrderController;
 use App\Http\Controllers\Followeran\ApiController;
 use Illuminate\Http\Request;
@@ -11,8 +12,7 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-
-Route::post('do',[ApiController::class,'send']);
+Route::post('do', [ApiController::class, 'send']);
 
 Route::post('verify', [PaymentVerificationController::class, 'verify'])
     ->middleware('throttle:6,1');
@@ -21,4 +21,7 @@ Route::post('order-status', [OrderStatusController::class, 'check'])
     ->middleware('throttle:6,1');
 
 Route::post('vm/verify', [VMOrderController::class, 'verify'])
-    ->middleware('throttle:6,1');
+    ->middleware(['web', 'throttle:6,1']);
+
+Route::post('sms/webhook/smscodex', [SmsWebhookController::class,"smscodex"])
+    ->middleware('throttle:60,1');

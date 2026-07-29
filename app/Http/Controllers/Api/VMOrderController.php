@@ -13,18 +13,19 @@ use App\Services\SmsCodexService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Symfony\Component\CssSelector\XPath\Extension\FunctionExtension;
 
 class VMOrderController extends Controller
 {
     public function verify(Request $request)
     {
-        $digiseller = new DigisellerService();
+        $digiseller = new DigisellerService;
         $verification = $digiseller->verifyPurchase($request->post('uniquecode'));
 
         $order = NumberOrder::where('plati_order_id', $verification['inv'])->first();
 
-        if($order){
+        if ($order) {
+            $this->authorizeOrderChannel($request, $order);
+
             $service = $order->service;
             $serviceDetails = $this->getServiceDetails($service->type);
             $statusDetails = $this->getStatusDetails($order->status);
@@ -39,6 +40,7 @@ class VMOrderController extends Controller
                     'serviceIcon' => $serviceDetails['icon'],
                     'status' => $statusDetails['value'],
                     'statusLabel' => $statusDetails['label'],
+                    'order_id' => $order->id,
                 ],
                 'message' => __('payment.success'),
             ]);
@@ -46,11 +48,11 @@ class VMOrderController extends Controller
 
         $job = $this->doTheJob($verification['id_goods'], $verification['options'], $verification['inv']);
 
-
+        $this->authorizeOrderChannel($request, $job['order']);
 
         return response()->json([
             'success' => true,
-            'data' => $job,
+            'data' => $job['data'],
             'message' => __('payment.success'),
         ]);
     }
@@ -71,21 +73,30 @@ class VMOrderController extends Controller
         $serviceDetails = $this->getServiceDetails($service->type);
 
         $serviceClass = $this->getSourceService($service->source);
-        $serviceInstance = new $serviceClass();
+        $serviceInstance = new $serviceClass;
         $number = $serviceInstance->getNumber();
 
         $order = $this->saveOrder($number['number'], $number['country_code'], 20, $service->id, $invoice_id);
         $statusDetails = $this->getStatusDetails($order->status);
 
         return [
-            'number' => $number['number'],
-            'country_code' => $number['country_code'],
-            'expires_at' => $this->dateToMinutes(Carbon::now()->addMinutes(20)),
-            'serviceName' => $serviceDetails['name'],
-            'serviceIcon' => $serviceDetails['icon'],
-            'status' => $statusDetails['value'],
-            'statusLabel' => $statusDetails['label'],
+            'order' => $order,
+            'data' => [
+                'number' => $number['number'],
+                'country_code' => $number['country_code'],
+                'expires_at' => $this->dateToMinutes(Carbon::now()->addMinutes(20)),
+                'serviceName' => $serviceDetails['name'],
+                'serviceIcon' => $serviceDetails['icon'],
+                'status' => $statusDetails['value'],
+                'statusLabel' => $statusDetails['label'],
+                'order_id' => $order->id,
+            ],
         ];
+    }
+
+    private function authorizeOrderChannel(Request $request, NumberOrder $order): void
+    {
+        $request->session()->put("number_order_ids.{$order->id}", true);
     }
 
     private function getStatusDetails(?string $status): array
@@ -120,7 +131,8 @@ class VMOrderController extends Controller
         ];
     }
 
-    private function getSourceService($serviceType){
+    private function getSourceService($serviceType)
+    {
         switch ($serviceType) {
             case 'smscodex':
                 return SmsCodexService::class;
@@ -129,9 +141,11 @@ class VMOrderController extends Controller
         }
     }
 
-    private function dateToMinutes($date){
+    private function dateToMinutes($date)
+    {
         $now = Carbon::now();
         $expires = Carbon::parse($date);
+
         return $now->diffInSeconds($expires);
     }
 

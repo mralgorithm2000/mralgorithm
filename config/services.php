@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'sms_webhook' => [
+        'secret' => env('SMS_WEBHOOK_SECRET'),
+    ],
+
 ];

@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@lang('sms.title')</title>
+
+    @vite('resources/js/app.js')
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -657,7 +660,7 @@
                         <div class="sms-code" id="smsCode">
                             <div class="label">@lang('sms.received_code')</div>
                             <div class="sms-value-box">
-                                <div class="sms-value" id="code">582341</div>
+                                <div class="sms-value" id="code"></div>
                                 <button class="copy-btn" type="button" onclick="copyText('code')" aria-label="@lang('sms.received_code')">
                                     <i class="fa-regular fa-copy" aria-hidden="true"></i>
                                 </button>
@@ -697,11 +700,19 @@
             }, 1800);
         }
 
-        setTimeout(() => {
-            document.getElementById("loading").style.display = "none";
-            document.getElementById("smsCode").style.display = "block";
-            document.getElementById("ding").play();
-        }, 10000);
+        function subscribeToSmsCode(orderId) {
+            window.Echo.private(`number-order.${orderId}`)
+                .listen('.sms.code.received', (event) => {
+                    if (Number(event.order_id) !== Number(orderId)) {
+                        return;
+                    }
+
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('smsCode').style.display = 'block';
+                    document.getElementById('code').innerText = event.sms_code;
+                    document.getElementById('ding').play().catch(() => {});
+                });
+        }
 
         const steps = [
             document.getElementById('step1'),
@@ -733,7 +744,10 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document
+                            .querySelector('meta[name="csrf-token"]')
+                            .getAttribute('content')
                     },
                     body: JSON.stringify({
                         uniquecode: uniqueCode
@@ -743,6 +757,8 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
+                    subscribeToSmsCode(data.data.order_id);
+
                     setTimeout(() => {
                         complete(0);
                         activate(1);
