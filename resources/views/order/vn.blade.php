@@ -819,6 +819,8 @@
                     }
 
                     if(code) {
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('smsCode').style.display = 'block';
                         code.innerText = data.data.sms_code || '';
                     }
 
