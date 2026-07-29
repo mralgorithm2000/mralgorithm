@@ -616,17 +616,6 @@
 
                     <div class="info-card">
                         <div class="label">
-                            <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
-                            Service
-                        </div>
-                        <div class="service-row">
-                            <img class="service-icon" id="serviceIcon" alt="" hidden>
-                            <div class="service-name" id="serviceName"></div>
-                        </div>
-                    </div>
-
-                    <div class="info-card">
-                        <div class="label">
                             <i class="fa-solid fa-globe" aria-hidden="true"></i>
                             @lang('sms.country_code')
                         </div>
@@ -637,6 +626,17 @@
                             </button>
                         </div>
                     </div>
+
+                    <div class="info-card">
+                        <div class="label">
+                            <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+                            Service
+                        </div>
+                        <div class="service-row">
+                            <img class="service-icon" id="serviceIcon" alt="" hidden>
+                            <div class="service-name" id="serviceName"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="activity-panel">
@@ -644,7 +644,7 @@
                         <div class="timer-label">
                             <i class="fa-regular fa-clock" aria-hidden="true"></i>
                         </div>
-                        <div class="timer" id="timer">20:00</div>
+                        <div class="timer" id="timer">00:00</div>
                     </div>
 
                     <div class="sms-area" aria-live="polite">
