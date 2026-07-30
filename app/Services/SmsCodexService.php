@@ -13,15 +13,15 @@ class SmsCodexService
      */
     private const COUNTRY_CODES = [
         'Georgia' => [
-            'smscodex_id' => '128',
+            'smscodex_id' => 'GE',
             'country_code' => '996',
         ],
         'Kyrgyzstan' => [
-            'smscodex_id' => '11',
+            'smscodex_id' => 'KG',
             'country_code' => '996'
         ],
         'Kazakhstan' => [
-            'smscodex_id' => '2',
+            'smscodex_id' => 'KZ',
             'country_code' => '7'
         ]
     ];
