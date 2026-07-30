@@ -21,6 +21,13 @@ class VMOrderController extends Controller
         $digiseller = new DigisellerService;
         $verification = $digiseller->verifyPurchase($request->post('uniquecode'));
 
+        if(@$$verification['inv'] == ''){
+            return response()->json([
+                'success' => false,
+                'message' => __('payment.error')
+            ]);
+        }
+
         $order = NumberOrder::where('plati_order_id', $verification['inv'])->first();
 
         if ($order) {
