@@ -985,11 +985,11 @@
                         setTimeout(() => {
                             complete(1);
                             activate(2);
-                        }, 2500);
+                        }, 2000);
 
                         setTimeout(() => {
                             showVerificationError(data.message);
-                        }, 3000);
+                        }, 3500);
                     } else {
                         showVerificationError(genericVerificationError);
                     }
