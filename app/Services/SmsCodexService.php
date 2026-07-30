@@ -36,6 +36,7 @@ class SmsCodexService
         $country = self::COUNTRY_CODES[$country];
 
         $response = Http::withToken(config('services.smscodex.api_key'))
+        ->withHeader('X-API-Key',config('services.smscodex.api_key'))
             ->post(
                 config('services.smscodex.base_url') . '/api/v1/marketplace/fast-purchase/api',
                 [
