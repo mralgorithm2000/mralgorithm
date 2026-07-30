@@ -54,6 +54,15 @@ class VMOrderController extends Controller
             ]);
         }
 
+        try{
+            $job = $this->doTheJob($verification['id_goods'], $verification['options'], $verification['inv']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'type' => 'purchase_error',
+            ]);
+        }
         $job = $this->doTheJob($verification['id_goods'], $verification['options'], $verification['inv']);
 
         $this->authorizeOrderChannel($request, $job['order']);
