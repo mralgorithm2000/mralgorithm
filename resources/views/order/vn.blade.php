@@ -848,6 +848,12 @@
             }
 
             try {
+
+                  setTimeout(() => {
+                            complete(0);
+                            activate(1);
+                        }, 1200);
+
                 const response = await fetch('{{ url('/api/vm/verify') }}', {
                     method: 'POST',
                     headers: {
@@ -866,11 +872,6 @@
 
                 if (response.ok && data.success) {
                     subscribeToSmsCode(data.data.order_id);
-
-                    setTimeout(() => {
-                        complete(0);
-                        activate(1);
-                    }, 1200);
 
                     setTimeout(() => {
                         complete(1);
@@ -979,10 +980,7 @@
                     }
                 } else {
                     if (data.type === 'purchase_error') {
-                        setTimeout(() => {
-                            complete(0);
-                            activate(1);
-                        }, 2000);
+
 
                         setTimeout(() => {
                             complete(1);
