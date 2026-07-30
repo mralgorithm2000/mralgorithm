@@ -982,16 +982,16 @@
                         setTimeout(() => {
                             complete(0);
                             activate(1);
-                        }, 1200);
+                        }, 2000);
 
                         setTimeout(() => {
                             complete(1);
                             activate(2);
-                        }, 1500);
+                        }, 2500);
 
                         setTimeout(() => {
                             showVerificationError(data.message);
-                        }, 2000);
+                        }, 3000);
                     } else {
                         showVerificationError(genericVerificationError);
                     }
