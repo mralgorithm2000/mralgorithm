@@ -985,7 +985,7 @@
                         setTimeout(() => {
                             complete(1);
                             activate(2);
-                        }, 2000);
+                        }, 1500);
 
                         setTimeout(() => {
                             showVerificationError(data.message);
