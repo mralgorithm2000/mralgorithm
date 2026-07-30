@@ -17,11 +17,3 @@ Route::get('/order/status',[OrderStatusController::class,'index'])->name('order.
 Route::get('/order/vn', function () {
     return view('order.vn');
 })->name('order.vn');
-
-
-
-
-Route::get('/test1234', function () {
-    $digiseller = new DigisellerService();
-    $digiseller->markAsDelivered("F987E0311D8D4C1F");
-})->name('order.vn');

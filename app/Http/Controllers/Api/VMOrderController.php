@@ -19,7 +19,7 @@ class VMOrderController extends Controller
     public function verify(Request $request)
     {
         $digiseller = new DigisellerService;
-        $verification = $digiseller->verifyPurchase($request->post('uniquecode'));
+        $verification = $digiseller->verifyPurchase($request->uniquecode);
 
         if(@$$verification['inv'] == ''){
             return response()->json([
