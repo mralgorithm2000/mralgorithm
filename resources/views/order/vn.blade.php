@@ -1009,8 +1009,8 @@
 
                 errorSection.style.display = 'none';
                 loading.style.display = 'block';
-                verifyPayment();
                 retry = true;
+                verifyPayment();
             });
 
             verifyPayment();
