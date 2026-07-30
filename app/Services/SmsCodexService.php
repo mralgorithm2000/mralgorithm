@@ -18,12 +18,12 @@ class SmsCodexService
         ],
         'Kyrgyzstan' => [
             'smscodex_id' => 'KG',
-            'country_code' => '996'
+            'country_code' => '996',
         ],
         'Kazakhstan' => [
             'smscodex_id' => 'KZ',
-            'country_code' => '7'
-        ]
+            'country_code' => '7',
+        ],
     ];
 
     private const SERVICE_CODES = [
@@ -33,53 +33,62 @@ class SmsCodexService
     public function getNumber(string $country, string $service_type, $original_price): array
     {
 
-        $country = self::COUNTRY_CODES[$country];
+        try {
+            $country = self::COUNTRY_CODES[$country];
 
-        $response = Http::withToken(config('services.smscodex.api_key'))
-        ->withHeader('X-API-Key',config('services.smscodex.api_key'))
-            ->post(
-                config('services.smscodex.base_url') . '/api/v1/marketplace/fast-purchase/api',
-                [
+            $response = Http::withToken(config('services.smscodex.api_key'))
+                ->withHeader('X-API-Key', config('services.smscodex.api_key'))
+                ->post(
+                    config('services.smscodex.base_url').'/api/v1/marketplace/fast-purchase/api',
+                    [
+                        'service_code' => self::SERVICE_CODES[$service_type],
+                        'country' => $country['smscodex_id'],
+                        'operator' => 'any',
+                        'price_limit' => (float) $original_price,
+                        'extras' => [
+                            'priority' => 'quality',
+                        ],
+                    ]
+                );
+
+            if (! $response->successful()) {
+                Log::error('SMSCodex purchase failed', [
+                    'status' => $response->status(),
                     'service_code' => self::SERVICE_CODES[$service_type],
                     'country' => $country['smscodex_id'],
-                    'operator' => 'any',
-                    'price_limit' => (float) $original_price,
-                    'extras' => [
-                        'priority' => 'quality',
-                    ],
-                ]
-            );
+                    'original_price' => $original_price,
+                    'body' => $response->body(),
+                ]);
 
-        if (! $response->successful()) {
-            Log::error('SMSCodex purchase failed', [
-                'status' => $response->status(),
-                'service_code' => self::SERVICE_CODES[$service_type],
-                'country' => $country['smscodex_id'],
-                'original_price' => $original_price,
-                'body' => $response->body(),
+                throw new Exception(__('sms.unable_to_purchase'), 1001);
+            }
+
+            $data = $response->json();
+
+            $countryCode = $country['country_code'];
+            $phoneNumber = $data['phone_number'];
+
+            if ($countryCode !== '' && str_starts_with($phoneNumber, $countryCode)) {
+                $phoneNumber = substr($phoneNumber, strlen($countryCode));
+            }
+
+            return [
+                'order_id' => $data['order_id'],
+                'number' => $phoneNumber,
+                'country_code' => '+'.$countryCode,
+            ];
+        } catch (Exception $e) {
+            Log::error('SMSCodex purchase exception', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'type' => 'purchase',
             ]);
 
             throw new Exception(
-                __('sms.unable_to_purchase'),
-                1001
+                $e->getMessage(),
+                $e->getCode() ?: 1001,
+                $e
             );
         }
-
-        $data = $response->json();
-
-        $countryCode = $country['country_code'];
-
-        $phoneNumber = $data['phone_number'];
-
-        // Remove the country code from the beginning of the number.
-        if ($countryCode !== '' && str_starts_with($phoneNumber, $countryCode)) {
-            $phoneNumber = substr($phoneNumber, strlen($countryCode));
-        }
-
-        return [
-            'order_id' => $data['order_id'],
-            'number' => $phoneNumber,
-            'country_code' => '+' . $countryCode,
-        ];
     }
 }
