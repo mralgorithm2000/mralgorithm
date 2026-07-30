@@ -30,7 +30,7 @@ class SmsCodexService
         'Telegram' => 'tg',
     ];
 
-    public function getNumber(string $country, string $service_type, $original_price): array
+    public function getNumber(string $country, string $service_type, $original_price, $order_id): array
     {
 
         $country = self::COUNTRY_CODES[$country];
@@ -47,6 +47,7 @@ class SmsCodexService
                     'extras' => [
                         'priority' => 'quality',
                     ],
+                    'idempotency_key' => $order_id,
                 ]
             );
 
