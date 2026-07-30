@@ -850,10 +850,12 @@
 
             try {
 
-                setTimeout(() => {
-                    complete(0);
-                    activate(1);
-                }, 1200);
+                if (retry == false) {
+                    setTimeout(() => {
+                        complete(0);
+                        activate(1);
+                    }, 1200);
+                }
 
                 const response = await fetch('{{ url('/api/vm/verify') }}', {
                     method: 'POST',
