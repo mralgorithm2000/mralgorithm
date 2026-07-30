@@ -838,6 +838,7 @@
             errorSection.style.display = 'block';
         }
 
+        var retry = false;
         async function verifyPayment() {
             const uniqueCode = new URLSearchParams(window.location.search)
                 .get('uniquecode');
@@ -849,10 +850,10 @@
 
             try {
 
-                  setTimeout(() => {
-                            complete(0);
-                            activate(1);
-                        }, 1200);
+                setTimeout(() => {
+                    complete(0);
+                    activate(1);
+                }, 1200);
 
                 const response = await fetch('{{ url('/api/vm/verify') }}', {
                     method: 'POST',
@@ -980,12 +981,13 @@
                     }
                 } else {
                     if (data.type === 'purchase_error') {
+                        if (retry == false) {
+                            setTimeout(() => {
+                                complete(1);
+                                activate(2);
+                            }, 1500);
+                        }
 
-
-                        setTimeout(() => {
-                            complete(1);
-                            activate(2);
-                        }, 1500);
 
                         setTimeout(() => {
                             showVerificationError(data.message);
@@ -1008,6 +1010,7 @@
                 errorSection.style.display = 'none';
                 loading.style.display = 'block';
                 verifyPayment();
+                retry = true;
             });
 
             verifyPayment();
