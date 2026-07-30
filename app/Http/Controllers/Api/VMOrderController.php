@@ -59,7 +59,7 @@ class VMOrderController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => __('payment.error'),
+                'message' => __('sms.unable_to_purchase'),
                 'type' => 'purchase_error',
             ]);
         }
