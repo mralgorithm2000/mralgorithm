@@ -22,7 +22,7 @@ class SmsCodexService
         ],
         'Kazakhstan' => [
             'smscodex_id' => '2',
-            'country_code' =>? '7'
+            'country_code' => '7'
         ]
     ];
 
