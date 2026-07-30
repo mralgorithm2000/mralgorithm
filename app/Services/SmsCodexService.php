@@ -33,7 +33,7 @@ class SmsCodexService
     public function getNumber(string $country, string $service_type, $original_price): array
     {
 
-        $country = self::COUNTRY_CODES[$country];
+        $country = self::COUNTRY_CODES[$country]; 
 
         $response = Http::withToken(config('services.smscodex.api_key'))
         ->withHeader('X-API-Key',config('services.smscodex.api_key'))
