@@ -15,4 +15,3 @@ Route::get('/order/status',[OrderStatusController::class,'index'])->name('order.
 Route::get('/order/vn', function () {
     return view('order.vn');
 })->name('order.vn');
-

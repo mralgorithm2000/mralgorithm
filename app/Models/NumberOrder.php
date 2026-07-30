@@ -16,6 +16,7 @@ class NumberOrder extends Model
         'sms_code',
         'status',
         'expires_at',
+        'source_order_id'
     ];
 
 

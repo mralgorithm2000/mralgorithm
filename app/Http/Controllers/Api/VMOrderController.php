@@ -75,9 +75,9 @@ class VMOrderController extends Controller
 
         $serviceClass = $this->getSourceService($service->source);
         $serviceInstance = new $serviceClass;
-        $number = $serviceInstance->getNumber();
+        $number = $serviceInstance->getNumber($service->country,$service->type,$service->original_price);
 
-        $order = $this->saveOrder($number['number'], $number['country_code'], 20, $service->id, $invoice_id);
+        $order = $this->saveOrder($number['number'], $number['country_code'], 20, $service->id, $invoice_id, $number['order_id']);
         $statusDetails = $this->getStatusDetails($order->status);
 
         return [
@@ -150,7 +150,7 @@ class VMOrderController extends Controller
         return $now->diffInSeconds($expires);
     }
 
-    private function saveOrder($number, $country_code, $expires_at, $service_id, $invoice_id)
+    private function saveOrder($number, $country_code, $expires_at, $service_id, $invoice_id, $order_id)
     {
         return NumberOrder::create([
             'virtual_number_id' => $service_id,
@@ -158,6 +158,7 @@ class VMOrderController extends Controller
             'phone_number' => $number,
             'country_code' => $country_code,
             'expires_at' => Carbon::now()->addMinutes($expires_at),
+            'source_order_id' => $order_id
         ]);
     }
 }

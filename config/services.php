@@ -39,4 +39,9 @@ return [
         'secret' => env('SMS_WEBHOOK_SECRET'),
     ],
 
+    'smscodex' => [
+        'base_url' => env('SMSCODEX_BASE_URL'),
+        'api_key' => env('SMSCODEX_API_KEY'),
+    ],
+
 ];
