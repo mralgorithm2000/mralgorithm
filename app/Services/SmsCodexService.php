@@ -59,7 +59,10 @@ class SmsCodexService
                 'body' => $response->body(),
             ]);
 
-            throw new Exception('Unable to purchase phone number.');
+            throw new Exception(
+                __('sms.unable_to_purchase'),
+                1001
+            );
         }
 
         $data = $response->json();

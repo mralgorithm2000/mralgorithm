@@ -38,4 +38,6 @@ return [
 
     'error_contact' => 'If the problem is not resolved, please message us.',
 
+    'unable_to_purchase' => 'Unable to purchase phone number.',
+
 ];
