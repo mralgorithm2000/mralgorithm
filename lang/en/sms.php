@@ -38,6 +38,5 @@ return [
 
     'error_contact' => 'If the problem is not resolved, please message us.',
 
-    'unable_to_purchase' => 'Unable to purchase phone number.',
-
+    'unable_to_purchase' => 'Our provider is currently experiencing high demand. Please try again later.',
 ];
