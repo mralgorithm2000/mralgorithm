@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -501,7 +502,7 @@
             transition: color .3s ease, background-color .3s ease;
         }
 
-        .step > i:first-child {
+        .step>i:first-child {
             width: 18px;
             text-align: center;
         }
@@ -537,7 +538,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         @media (max-width: 680px) {
@@ -601,7 +604,10 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
+
+            *,
+            *::before,
+            *::after {
                 scroll-behavior: auto !important;
                 transition-duration: .01ms !important;
                 animation-duration: .01ms !important;
@@ -689,7 +695,8 @@
                         </div>
                         <div class="value-row">
                             <div class="value" id="phone"></div>
-                            <button class="copy-btn" type="button" onclick="copyText('phone')" aria-label="@lang('sms.phone_number')">
+                            <button class="copy-btn" type="button" onclick="copyText('phone')"
+                                aria-label="@lang('sms.phone_number')">
                                 <i class="fa-regular fa-copy" aria-hidden="true"></i>
                             </button>
                         </div>
@@ -702,7 +709,8 @@
                         </div>
                         <div class="value-row">
                             <div class="value" id="country"></div>
-                            <button class="copy-btn" type="button" onclick="copyText('country')" aria-label="@lang('sms.country_code')">
+                            <button class="copy-btn" type="button" onclick="copyText('country')"
+                                aria-label="@lang('sms.country_code')">
                                 <i class="fa-regular fa-copy" aria-hidden="true"></i>
                             </button>
                         </div>
@@ -739,7 +747,8 @@
                             <div class="label">@lang('sms.received_code')</div>
                             <div class="sms-value-box">
                                 <div class="sms-value" id="code"></div>
-                                <button class="copy-btn" type="button" onclick="copyText('code')" aria-label="@lang('sms.received_code')">
+                                <button class="copy-btn" type="button" onclick="copyText('code')"
+                                    aria-label="@lang('sms.received_code')">
                                     <i class="fa-regular fa-copy" aria-hidden="true"></i>
                                 </button>
                             </div>
@@ -906,7 +915,7 @@
                         country.innerText = data.data.country_code;
                     }
 
-                    if(code) {
+                    if (code) {
                         document.getElementById('loading').style.display = 'none';
                         document.getElementById('smsCode').style.display = 'block';
                         code.innerText = data.data.sms_code || '';
@@ -928,9 +937,9 @@
                     const statusBadge = document.getElementById('statusBadge');
                     const statusLabel = document.getElementById('statusLabel');
                     const allowedStatuses = ['waiting', 'received', 'expired', 'refunded'];
-                    const status = allowedStatuses.includes(data.data.status)
-                        ? data.data.status
-                        : 'waiting';
+                    const status = allowedStatuses.includes(data.data.status) ?
+                        data.data.status :
+                        'waiting';
 
                     if (statusBadge) {
                         statusBadge.dataset.status = status;
@@ -969,6 +978,23 @@
                         }, 1000);
                     }
                 } else {
+                    if (data.type === 'purchase_error') {
+                        setTimeout(() => {
+                            complete(0);
+                            activate(1);
+                        }, 1200);
+
+                        setTimeout(() => {
+                            complete(1);
+                            activate(2);
+                        }, 1500);
+
+                        setTimeout(() => {
+                            showVerificationError(data.message);
+                        }, 2000);
+                    } else {
+                        showVerificationError(genericVerificationError);
+                    }
                     showVerificationError(data.message);
                 }
             } catch (error) {
@@ -991,4 +1017,5 @@
         });
     </script>
 </body>
+
 </html>
