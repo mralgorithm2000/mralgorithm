@@ -12,9 +12,9 @@ class SmsCodexService
      * SMSCodex country ID => international dialing code.
      */
     private const COUNTRY_CODES = [
-        'Georgia' => [
-            'smscodex_id' => 'GE',
-            'country_code' => '996',
+        'Indonesia' => [
+            'smscodex_id' => 'ID',
+            'country_code' => '62',
         ],
         'Kyrgyzstan' => [
             'smscodex_id' => 'KG',
