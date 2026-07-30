@@ -30,4 +30,12 @@ return [
 
     'step_preparing' => 'Preparing your virtual number',
 
+    'error_title' => 'Error',
+
+    'verification_error' => 'We could not verify your payment. Please try again.',
+
+    'retry' => 'Retry',
+
+    'error_contact' => 'If the problem is not resolved, please message us.',
+
 ];

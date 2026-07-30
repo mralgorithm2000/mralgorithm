@@ -423,6 +423,67 @@
             line-height: 1.6;
         }
 
+        .verification-error {
+            display: none;
+            text-align: center;
+        }
+
+        .error-icon {
+            width: 54px;
+            height: 54px;
+            display: grid;
+            margin: 0 auto;
+            place-items: center;
+            border-radius: 50%;
+            color: var(--red);
+            background: var(--red-soft);
+            font-size: 22px;
+        }
+
+        .error-message {
+            margin: 8px 0 20px;
+            padding: 13px 15px;
+            border-radius: 13px;
+            color: #845d67;
+            background: var(--red-soft);
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .retry-btn {
+            display: inline-flex;
+            min-height: 42px;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border: 0;
+            border-radius: 12px;
+            color: #fff;
+            background: var(--lavender);
+            cursor: pointer;
+            font-weight: 700;
+            transition: background-color .2s ease, transform .2s ease;
+        }
+
+        .retry-btn:hover {
+            background: #6659aa;
+            transform: translateY(-1px);
+        }
+
+        .retry-btn:focus-visible {
+            outline: 3px solid rgba(116, 103, 184, .25);
+            outline-offset: 2px;
+        }
+
+        .error-contact {
+            margin-top: 18px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
         .steps {
             display: grid;
             gap: 9px;
@@ -553,37 +614,52 @@
 <body>
     <div id="verifyScreen">
         <div class="verify-card">
-            <div class="verify-icon">
-                <div class="loader"></div>
+            <div id="verificationLoading">
+                <div class="verify-icon">
+                    <div class="loader"></div>
+                </div>
+
+                <h1>@lang('sms.verifying_payment')</h1>
+
+                <p class="verify-subtitle">
+                    @lang('sms.verifying_payment_description')
+                </p>
+
+                <div class="steps">
+                    <div class="step active" id="step1">
+                        <i class="fa-solid fa-credit-card"></i>
+                        <span>@lang('sms.step_payment_received')</span>
+                        <i class="fa-solid fa-circle-notch fa-spin spinner-icon"></i>
+                        <i class="fa-solid fa-check success-icon"></i>
+                    </div>
+
+                    <div class="step" id="step2">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>@lang('sms.step_transaction')</span>
+                        <i class="fa-solid fa-circle-notch fa-spin spinner-icon"></i>
+                        <i class="fa-solid fa-check success-icon"></i>
+                    </div>
+
+                    <div class="step" id="step3">
+                        <i class="fa-solid fa-mobile-screen-button"></i>
+                        <span>@lang('sms.step_preparing')</span>
+                        <i class="fa-solid fa-circle-notch fa-spin spinner-icon"></i>
+                        <i class="fa-solid fa-check success-icon"></i>
+                    </div>
+                </div>
             </div>
 
-            <h1>@lang('sms.verifying_payment')</h1>
-
-            <p class="verify-subtitle">
-                @lang('sms.verifying_payment_description')
-            </p>
-
-            <div class="steps">
-                <div class="step active" id="step1">
-                    <i class="fa-solid fa-credit-card"></i>
-                    <span>@lang('sms.step_payment_received')</span>
-                    <i class="fa-solid fa-circle-notch fa-spin spinner-icon"></i>
-                    <i class="fa-solid fa-check success-icon"></i>
+            <div class="verification-error" id="verificationError" role="alert">
+                <div class="error-icon" aria-hidden="true">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
-
-                <div class="step" id="step2">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <span>@lang('sms.step_transaction')</span>
-                    <i class="fa-solid fa-circle-notch fa-spin spinner-icon"></i>
-                    <i class="fa-solid fa-check success-icon"></i>
-                </div>
-
-                <div class="step" id="step3">
-                    <i class="fa-solid fa-mobile-screen-button"></i>
-                    <span>@lang('sms.step_preparing')</span>
-                    <i class="fa-solid fa-circle-notch fa-spin spinner-icon"></i>
-                    <i class="fa-solid fa-check success-icon"></i>
-                </div>
+                <h1>@lang('sms.error_title')</h1>
+                <p class="error-message" id="verificationErrorMessage"></p>
+                <button class="retry-btn" id="retryVerification" type="button">
+                    <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+                    @lang('sms.retry')
+                </button>
+                <p class="error-contact">@lang('sms.error_contact')</p>
             </div>
         </div>
     </div>
@@ -741,12 +817,24 @@
             steps[index].classList.add('done');
         }
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        const genericVerificationError = @json(__('sms.verification_error'));
+
+        function showVerificationError(message) {
+            const loading = document.getElementById('verificationLoading');
+            const errorSection = document.getElementById('verificationError');
+            const errorMessage = document.getElementById('verificationErrorMessage');
+
+            loading.style.display = 'none';
+            errorMessage.textContent = message || genericVerificationError;
+            errorSection.style.display = 'block';
+        }
+
+        async function verifyPayment() {
             const uniqueCode = new URLSearchParams(window.location.search)
                 .get('uniquecode');
 
             if (!uniqueCode) {
-                console.error('Unique code missing');
+                showVerificationError(genericVerificationError);
                 return;
             }
 
@@ -881,11 +969,25 @@
                         }, 1000);
                     }
                 } else {
-                    console.error('Verification failed:', data.message || data);
+                    showVerificationError(data.message);
                 }
             } catch (error) {
                 console.error('API Error:', error);
+                showVerificationError(genericVerificationError);
             }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('retryVerification').addEventListener('click', () => {
+                const loading = document.getElementById('verificationLoading');
+                const errorSection = document.getElementById('verificationError');
+
+                errorSection.style.display = 'none';
+                loading.style.display = 'block';
+                verifyPayment();
+            });
+
+            verifyPayment();
         });
     </script>
 </body>
