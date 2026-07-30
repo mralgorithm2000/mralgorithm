@@ -919,7 +919,7 @@
                         country.innerText = data.data.country_code;
                     }
 
-                    if (code) {
+                    if (code && data.data.sms_code != '') {
                         document.getElementById('loading').style.display = 'none';
                         document.getElementById('smsCode').style.display = 'block';
                         code.innerText = data.data.sms_code || '';
