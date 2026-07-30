@@ -53,6 +53,9 @@ class SmsCodexService
         if (! $response->successful()) {
             Log::error('SMSCodex purchase failed', [
                 'status' => $response->status(),
+                'service_code' => self::SERVICE_CODES[$service_type],
+                'country' => $country['smscodex_id'],
+                'original_price' => $original_price,
                 'body' => $response->body(),
             ]);
 
