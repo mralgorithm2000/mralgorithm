@@ -995,7 +995,6 @@
                     } else {
                         showVerificationError(genericVerificationError);
                     }
-                    showVerificationError(data.message);
                 }
             } catch (error) {
                 console.error('API Error:', error);
