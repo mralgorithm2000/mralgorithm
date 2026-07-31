@@ -27,6 +27,9 @@ class SmsWebhookController extends Controller
             ! $payload ||
             ($payload['stage'] ?? null) !== 'completed'
         ) {
+            Log::info('sms codex status webhook',[
+                'status' => 'Ignored'
+            ]);
             return response()->json([
                 'success' => true,
                 'message' => 'Ignored',
@@ -36,6 +39,9 @@ class SmsWebhookController extends Controller
         $orderId = $payload['order_id'] ?? null;
 
         if (! $orderId) {
+              Log::info('sms codex status webhook',[
+                'status' => 'Missing order_id'
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Missing order_id',
@@ -44,6 +50,9 @@ class SmsWebhookController extends Controller
 
         $service = new SmsCodexService;
 
+         Log::info('sms codex status webhook',[
+                'status' => 'getting status'
+            ]);
         // Pass the order id to your API
         $status = $service->getOrderStatus($orderId);
 
@@ -51,6 +60,10 @@ class SmsWebhookController extends Controller
             ?? data_get($status, 'sms.0.code');
 
         if (! $smsCode) {
+
+         Log::info('sms codex status webhook',[
+                'status' => 'no sms code'
+            ]);
             return response()->json([
                 'success' => true,
                 'message' => 'No SMS code yet',
