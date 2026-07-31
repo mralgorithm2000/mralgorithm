@@ -44,4 +44,10 @@ return [
         'api_key' => env('SMSCODEX_API_KEY'),
     ],
 
+    'numberland' => [
+        'base_url' => env('NUMBERLAND_BASE_URL'),
+        'api_key' => env('NUMBERLAND_API_KEY'),
+    ],
+
+
 ];

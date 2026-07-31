@@ -28,6 +28,7 @@ class SmsCodexService
 
     private const SERVICE_CODES = [
         'Telegram' => 'tg',
+        'Instagram' => 'tg',
     ];
 
     public function getNumber(string $country, string $service_type, $original_price, $order_id): array
