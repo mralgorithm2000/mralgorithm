@@ -84,4 +84,28 @@ class SmsCodexService
             'country_code' => '+' . $countryCode,
         ];
     }
+
+    public function getOrderStatus(string $order_id): array
+    {
+        $response = Http::withToken(config('services.smscodex.api_key'))
+            ->withHeader('X-API-Key',config('services.smscodex.api_key'))
+            ->get(
+                config('services.smscodex.base_url') . '/api/v1/marketplace/orders/' . $order_id
+        );
+
+        if (! $response->successful()) {
+            Log::error('SMSCodex order status check failed', [
+                'status' => $response->status(),
+                'order_id' => $order_id,
+                'body' => $response->body(),
+            ]);
+
+            throw new Exception(
+                __('sms.unable_to_check_status'),
+                1002
+            );
+        }
+
+        return $response->json();
+    }
 }
