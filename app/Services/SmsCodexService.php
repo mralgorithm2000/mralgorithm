@@ -47,6 +47,7 @@ class SmsCodexService
                     'extras' => [
                         'priority' => 'quality',
                     ],
+                    "callback_url": "https://my.mralgorithm.ru/api/sms/webhook/smscodex",
                     // 'idempotency_key' => (string) $order_id,
                 ]
             );
