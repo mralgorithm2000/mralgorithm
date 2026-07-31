@@ -47,7 +47,7 @@ class SmsCodexService
                     'extras' => [
                         'priority' => 'quality',
                     ],
-                    'idempotency_key' => (string) $order_id,
+                    // 'idempotency_key' => (string) $order_id,
                 ]
             );
 
