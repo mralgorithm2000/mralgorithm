@@ -975,6 +975,7 @@
                                 total = 0;
                                 updateTimer();
                                 clearInterval(interval);
+                                statusLabel.innerText = 'Expired';
                                 return;
                             }
 
