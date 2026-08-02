@@ -23,7 +23,7 @@ class SmsCodexService
         'Kazakhstan' => [
             'smscodex_id' => 'KZ',
             'country_code' => '7'
-        ]
+        ] 
     ];
 
     private const SERVICE_CODES = [
