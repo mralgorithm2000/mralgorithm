@@ -12,6 +12,7 @@ use App\Services\NumberlandService;
 use App\Services\SmsCodexService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class VMOrderController extends Controller
@@ -57,6 +58,10 @@ class VMOrderController extends Controller
         try{
             $job = $this->doTheJob($verification['id_goods'], $verification['options'], $verification['inv']);
         } catch (\Exception $e) {
+             Log::info('puchace ctach status', [
+                'status' => 'error',
+                'body' => $e->getMessage(),
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => __('sms.unable_to_purchase'),

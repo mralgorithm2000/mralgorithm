@@ -39,6 +39,11 @@ class NumberlandService
             );
         }
 
+        Log::info('NumberLand purchase status', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
         $data = $response->json();
 
         if (($data['RESULT'] ?? null) != 1) {
