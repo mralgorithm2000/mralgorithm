@@ -91,7 +91,7 @@ class VMOrderController extends Controller
 
         $serviceClass = $this->getSourceService($service->source);
         $serviceInstance = new $serviceClass;
-        $number = $serviceInstance->getNumber($service->country,$service->type,$service->original_price, $invoice_id);
+        $number = $serviceInstance->getNumber($service, $invoice_id);
 
         $order = $this->saveOrder($number['number'], $number['country_code'], 20, $service->id, $invoice_id, $number['order_id']);
         $statusDetails = $this->getStatusDetails($order->status);

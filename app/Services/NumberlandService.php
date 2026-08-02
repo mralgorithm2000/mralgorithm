@@ -1,6 +1,9 @@
 <?php
 
 namespace App\Services;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Mockery\CountValidator\Exception;
 
 class NumberlandService
 {
@@ -9,35 +12,17 @@ class NumberlandService
      *
      * Replace these IDs with the correct values from the getinfo API.
      */
-    private const SERVICE_IDS = [
-        'Indonesia' => [
-            'Telegram' => 1,
-        ],
 
-        'Kazakhstan' => [
-            'Telegram' => 2,
-        ],
 
-        'Kyrgyzstan' => [
-            'Telegram' => 3,
-        ],
-    ];
+    public function getNumber($service, $order_id): array {
 
-    public function getNumber(
-        string $country,
-        string $service_type,
-        $original_price,
-        $order_id
-    ): array {
-
-        $sid = self::SERVICE_IDS[$country][$service_type];
 
         $response = Http::get(
             config('services.numberland.base_url').'/v2.php',
             [
                 'apikey' => config('services.numberland.api_key'),
                 'method' => 'getnum',
-                'sid' => $sid,
+                'sid' => $service->service_id,
             ]
         );
 

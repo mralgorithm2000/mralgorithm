@@ -11,40 +11,19 @@ class SmsCodexService
     /**
      * SMSCodex country ID => international dialing code.
      */
-    private const COUNTRY_CODES = [
-        'Indonesia' => [
-            'smscodex_id' => 'ID',
-            'country_code' => '62',
-        ],
-        'Kyrgyzstan' => [
-            'smscodex_id' => 'KG',
-            'country_code' => '996'
-        ],
-        'Kazakhstan' => [
-            'smscodex_id' => 'KZ',
-            'country_code' => '7'
-        ] 
-    ];
 
-    private const SERVICE_CODES = [
-        'Telegram' => 'tg',
-        'Instagram' => 'tg',
-    ];
-
-    public function getNumber(string $country, string $service_type, $original_price, $order_id): array
+    public function getNumber($service, $order_id): array
     {
-
-        $country = self::COUNTRY_CODES[$country];
 
         $response = Http::withToken(config('services.smscodex.api_key'))
         ->withHeader('X-API-Key',config('services.smscodex.api_key'))
             ->post(
                 config('services.smscodex.base_url') . '/api/v1/marketplace/fast-purchase/api',
                 [
-                    'service_code' => self::SERVICE_CODES[$service_type],
-                    'country' => $country['smscodex_id'],
+                    'service_code' => $service->service_id,
+                    'country' => $service->country_id,
                     'operator' => 'any',
-                    'price_limit' => (float) $original_price,
+                    'price_limit' => (float) $service->original_price,
                     'extras' => [
                         'priority' => 'quality',
                     ],
@@ -56,9 +35,9 @@ class SmsCodexService
         if (! $response->successful()) {
             Log::error('SMSCodex purchase failed', [
                 'status' => $response->status(),
-                'service_code' => self::SERVICE_CODES[$service_type],
-                'country' => $country['smscodex_id'],
-                'original_price' => $original_price,
+                'service_code' => $service->service_id,
+                'country' => $service->country_id,
+                'original_price' => $service->original_price,
                 'body' => $response->body(),
             ]);
 
@@ -70,7 +49,7 @@ class SmsCodexService
 
         $data = $response->json();
 
-        $countryCode = $country['country_code'];
+        $countryCode = $service->country_code;
 
         $phoneNumber = $data['phone_number'];
 
