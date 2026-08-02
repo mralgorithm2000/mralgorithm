@@ -23,7 +23,21 @@ class DigisellerService
                 'inv' => 789,
             ];
         }
-        
+
+        if($uniqueCode === 'test2') {
+            return [
+                'id_goods' => 1234,
+                'options' => [
+                    [
+                        'id' => 12,
+                        'variant_id' => 4567,
+                    ],
+                ],
+                'inv' => 7890,
+            ];
+        }
+
+
         $token = $this->getToken();
 
         $response = Http::acceptJson()->get(
