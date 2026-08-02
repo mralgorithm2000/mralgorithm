@@ -12,6 +12,9 @@ class VirtualNumber extends Model
         'source',
         'type',
         'plati_id',
+        'service_id',
+        'country_id',
+        'country_code',
     ];
 
     protected $table = 'virtual_numbers';
