@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\CheckNumberlandOrderStatuses;
 use App\Console\Commands\ExpireNumberOrders;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -10,3 +11,6 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command(ExpireNumberOrders::class)->everyMinute();
+Schedule::command(CheckNumberlandOrderStatuses::class)
+    ->everyFiveSeconds()
+    ->withoutOverlapping();
