@@ -89,29 +89,4 @@ class SmsWebhookController extends Controller
             'success' => true,
         ]);
     }
-
-    public function numberland(Request $request)
-    {
-        $order_id = $request->input('order_id');
-
-        $numberlandService = new NumberlandService;
-        $status = $numberlandService->getOrderStatus($order_id);
-        $smsCode = $status['last_code']
-            ?? data_get($status, 'sms.0.code');
-
-        if (! $smsCode) {
-            return;
-        }
-
-        $updated = NumberOrder::where('source_order_id', $order_id)->update([
-            'sms_code' => (string) $smsCode,
-            'status' => NumberOrderStatus::RECEIVED->value,
-        ]);
-
-        if (! $updated) {
-            return;
-        }
-        $smsCodeBroadcastService = new SmsCodeBroadcastService;
-        $smsCodeBroadcastService->broadcast($order_id, (string) $smsCode);
-    }
 }

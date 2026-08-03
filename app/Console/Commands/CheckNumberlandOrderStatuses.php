@@ -7,7 +7,6 @@ use App\Models\NumberOrder;
 use App\Services\NumberlandService;
 use App\Services\SmsCodeBroadcastService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -17,7 +16,10 @@ class CheckNumberlandOrderStatuses extends Command
 
     protected $description = 'Check active Numberland orders for received SMS codes';
 
-    public function handle(): int {
+    public function handle(
+        NumberlandService $numberlandService,
+        SmsCodeBroadcastService $smsCodeBroadcastService
+    ): int {
         $checkedCount = 0;
         $receivedCount = 0;
 
@@ -34,16 +36,44 @@ class CheckNumberlandOrderStatuses extends Command
             })
             ->lazyById()
             ->each(function (NumberOrder $order) use (
+                $numberlandService,
+                $smsCodeBroadcastService,
                 &$checkedCount,
                 &$receivedCount
             ) {
                 $checkedCount++;
 
-                Http::get('https://my.mralgorithm.ru/api/sms/check/numberland',[
-                    'order_id' => $order->source_order_id
-                ]);
+                try {
+                    $status = $numberlandService->getOrderStatus($order->source_order_id);
+                    $smsCode = $status['last_code']
+                        ?? data_get($status, 'sms.0.code');
 
-                
+                    if (! $smsCode) {
+                        return;
+                    }
+
+                    $updated = NumberOrder::query()
+                        ->whereKey($order->getKey())
+                        ->where('status', NumberOrderStatus::WAITING->value)
+                        ->whereNull('sms_code')
+                        ->update([
+                            'sms_code' => (string) $smsCode,
+                            'status' => NumberOrderStatus::RECEIVED->value,
+                        ]);
+
+                    if (! $updated) {
+                        return;
+                    }
+
+                    $receivedCount++;
+                    $smsCodeBroadcastService->broadcast($order->id, (string) $smsCode);
+                } catch (Throwable $exception) {
+                    Log::error('NumberLand scheduled order status check failed', [
+                        'number_order_id' => $order->id,
+                        'source_order_id' => $order->source_order_id,
+                        'exception' => $exception->getMessage(),
+                    ]);
+                }
             });
 
         $this->info("Checked {$checkedCount} Numberland order(s); received {$receivedCount} code(s).");

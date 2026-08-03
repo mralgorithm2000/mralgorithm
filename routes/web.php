@@ -20,23 +20,3 @@ Route::get('/order/vn', function () {
     return view('order.vn');
 })->name('order.vn');
  
-Route::get('/test/sms-code-broadcast', function (SmsCodeBroadcastService $smsCodeBroadcastService) {
-    $order = NumberOrder::query()->latest('id')->first();
-
-    if (! $order) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No number order found.',
-        ], 404);
-    }
-
-    $smsCode = '123465789';
-
-    $smsCodeBroadcastService->broadcast($order->id, $smsCode);
-
-    return response()->json([
-        'success' => true,
-        'order_id' => $order->id,
-        'sms_code' => $smsCode,
-    ]);
-})->name('test.sms-code-broadcast');
