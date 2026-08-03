@@ -67,40 +67,25 @@ class SmsCodexService
 
     public function getOrderStatus(string $order_id): array
     {
-        $url = config('services.numberland.base_url').'/v2.php';
+        $response = Http::withToken(config('services.smscodex.api_key'))
+            ->withHeader('X-API-Key',config('services.smscodex.api_key'))
+            ->get(
+                config('services.smscodex.base_url') . '/api/v1/marketplace/orders/' . $order_id
+        );
 
-    Log::info('Testing NumberLand', [
-        'url' => $url,
-    ]);
+        if (! $response->successful()) {
+            Log::error('SMSCodex order status check failed', [
+                'status' => $response->status(),
+                'order_id' => $order_id,
+                'body' => $response->body(),
+            ]);
 
-    $response = Http::timeout(30)
-        ->connectTimeout(30)
-        ->get($url);
+            throw new Exception(
+                __('sms.unable_to_check_status'),
+                1002
+            );
+        }
 
-    dd(
-        $response->status(),
-        $response->body()
-    );
-    
-        // $response = Http::withToken(config('services.smscodex.api_key'))
-        //     ->withHeader('X-API-Key',config('services.smscodex.api_key'))
-        //     ->get(
-        //         config('services.smscodex.base_url') . '/api/v1/marketplace/orders/' . $order_id
-        // );
-
-        // if (! $response->successful()) {
-        //     Log::error('SMSCodex order status check failed', [
-        //         'status' => $response->status(),
-        //         'order_id' => $order_id,
-        //         'body' => $response->body(),
-        //     ]);
-
-        //     throw new Exception(
-        //         __('sms.unable_to_check_status'),
-        //         1002
-        //     );
-        // }
-
-        // return $response->json();
+        return $response->json();
     }
 }
