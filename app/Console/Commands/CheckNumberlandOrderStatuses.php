@@ -42,6 +42,8 @@ class CheckNumberlandOrderStatuses extends Command
                 Http::get('https://my.mralgorithm.ru/api/sms/check/numberland',[
                     'order_id' => $order->source_order_id
                 ]);
+
+                
             });
 
         $this->info("Checked {$checkedCount} Numberland order(s); received {$receivedCount} code(s).");

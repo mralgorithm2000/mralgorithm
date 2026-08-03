@@ -26,5 +26,5 @@ Route::post('vm/verify', [VMOrderController::class, 'verify'])
 Route::post('sms/webhook/smscodex', [SmsWebhookController::class,"smscodex"])
     ->middleware('throttle:60,1');
 
-Route::post('sms/check/numberland', [SmsWebhookController::class,"numberland"])
+Route::get('sms/check/numberland', [SmsWebhookController::class,"numberland"])
     ->middleware('throttle:60,1');

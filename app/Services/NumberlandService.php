@@ -81,98 +81,82 @@ class NumberlandService
     public function getOrderStatus(string $order_id): array
     {
 
-    $url = config('services.numberland.base_url').'/v2.php';
+        $response = Http::get(
+            config('services.numberland.base_url').'/v2.php',
+            [
+                'apikey' => config('services.numberland.api_key'),
+                'method' => 'checkstatus',
+                'id' => $order_id,
+            ]
+        );
 
-    Log::info('Testing NumberLand', [
-        'url' => $url,
-    ]);
+        if (! $response->successful()) {
 
-    $response = Http::timeout(30)
-        ->connectTimeout(30)
-        ->get($url);
+            Log::error('NumberLand order status check failed', [
+                'status' => $response->status(),
+                'order_id' => $order_id,
+                'body' => $response->body(),
+            ]);
 
-    dd(
-        $response->status(),
-        $response->body()
-    );
+            throw new Exception(
+                __('sms.unable_to_check_status'),
+                1002
+            );
+        }
 
-    
-        // $response = Http::get(
-        //     config('services.numberland.base_url').'/v2.php',
-        //     [
-        //         'apikey' => config('services.numberland.api_key'),
-        //         'method' => 'checkstatus',
-        //         'id' => $order_id,
-        //     ]
-        // );
+        $data = $response->json();
 
-        // if (! $response->successful()) {
+        if (($data['RESULT'] ?? null) == -304) {
 
-        //     Log::error('NumberLand order status check failed', [
-        //         'status' => $response->status(),
-        //         'order_id' => $order_id,
-        //         'body' => $response->body(),
-        //     ]);
+            Log::error('NumberLand order not found', [
+                'order_id' => $order_id,
+                'response' => $data,
+            ]);
 
-        //     throw new Exception(
-        //         __('sms.unable_to_check_status'),
-        //         1002
-        //     );
-        // }
+            throw new Exception(
+                __('sms.unable_to_check_status'),
+                1002
+            );
+        }
 
-        // $data = $response->json();
+        $statusMap = [
+            1 => 'awaiting_confirmation', // wait code
+            2 => 'completed',             // code received
+            3 => 'cancelled',             // number canceled
+            4 => 'cancelled',             // number banned
+            5 => 'awaiting_confirmation', // wait code again
+            6 => 'completed',             // completed
+        ];
 
-        // if (($data['RESULT'] ?? null) == -304) {
+        $status = $statusMap[$data['RESULT']] ?? 'unknown';
 
-        //     Log::error('NumberLand order not found', [
-        //         'order_id' => $order_id,
-        //         'response' => $data,
-        //     ]);
+        $smsCode = null;
 
-        //     throw new Exception(
-        //         __('sms.unable_to_check_status'),
-        //         1002
-        //     );
-        // }
+        if (
+            (int) $data['RESULT'] === 2 &&
+            ! empty($data['CODE']) &&
+            $data['CODE'] !== '0'
+        ) {
+            $smsCode = $data['CODE'];
+        }
 
-        // $statusMap = [
-        //     1 => 'awaiting_confirmation', // wait code
-        //     2 => 'completed',             // code received
-        //     3 => 'cancelled',             // number canceled
-        //     4 => 'cancelled',             // number banned
-        //     5 => 'awaiting_confirmation', // wait code again
-        //     6 => 'completed',             // completed
-        // ];
+        return [
+            'order_id' => $order_id,
+            'order_status' => $status,
 
-        // $status = $statusMap[$data['RESULT']] ?? 'unknown';
+            // Returned for compatibility with SmsCodexService
+            'sms' => $smsCode
+                ? [
+                    [
+                        'code' => $smsCode,
+                        'text' => null,
+                        'sender' => null,
+                        'received_at' => null,
+                    ],
+                ]
+                : [],
 
-        // $smsCode = null;
-
-        // if (
-        //     (int) $data['RESULT'] === 2 &&
-        //     ! empty($data['CODE']) &&
-        //     $data['CODE'] !== '0'
-        // ) {
-        //     $smsCode = $data['CODE'];
-        // }
-
-        // return [
-        //     'order_id' => $order_id,
-        //     'order_status' => $status,
-
-        //     // Returned for compatibility with SmsCodexService
-        //     'sms' => $smsCode
-        //         ? [
-        //             [
-        //                 'code' => $smsCode,
-        //                 'text' => null,
-        //                 'sender' => null,
-        //                 'received_at' => null,
-        //             ],
-        //         ]
-        //         : [],
-
-        //     'last_code' => $smsCode,
-        // ];
+            'last_code' => $smsCode,
+        ];
     }
 }
