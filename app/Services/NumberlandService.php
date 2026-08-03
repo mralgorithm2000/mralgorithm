@@ -86,8 +86,6 @@ class NumberlandService
     .'&method=checkstatus'
     .'&id='.urlencode($order_id);
 
-        Log::info($url);
-
         $response = Http::timeout(30)
             ->connectTimeout(30)
             ->get($url);
