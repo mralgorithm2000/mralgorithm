@@ -19,7 +19,7 @@ Route::get('/order/status',[OrderStatusController::class,'index'])->name('order.
 Route::get('/order/vn', function () {
     return view('order.vn');
 })->name('order.vn');
-
+ 
 Route::get('/test/sms-code-broadcast', function (SmsCodeBroadcastService $smsCodeBroadcastService) {
     $order = NumberOrder::query()->latest('id')->first();
 
