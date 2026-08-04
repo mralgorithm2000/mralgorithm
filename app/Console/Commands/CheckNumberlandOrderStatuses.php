@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\PhoneAttemptStatus;
+use App\Enums\PurchaseStatus;
 use App\Models\PhoneAttempt;
 use App\Services\NumberlandService;
 use App\Services\SmsCodeBroadcastService;
@@ -62,6 +63,10 @@ class CheckNumberlandOrderStatuses extends Command
                     if (! $updated) {
                         return;
                     }
+
+                    $attempt->purchase()->update([
+                        'status' => PurchaseStatus::COMPLETED->value,
+                    ]);
 
                     $receivedCount++;
                     $smsCodeBroadcastService->broadcast($attempt->id, (string) $smsCode);

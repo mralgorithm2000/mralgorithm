@@ -52,6 +52,27 @@ class SmsCodexService
 
         $data = $response->json();
 
+        $providerExpiresAt = $data['expires_at'] ?? null;
+
+        if (! is_string($providerExpiresAt) || trim($providerExpiresAt) === '') {
+            Log::error('SMSCodex purchase returned a missing expiration timestamp', [
+                'response' => $data,
+            ]);
+
+            throw new Exception(__('sms.unable_to_purchase'), 1001);
+        }
+
+        try {
+            $expiresAt = Carbon::parse($providerExpiresAt)->utc();
+        } catch (\Throwable $exception) {
+            Log::error('SMSCodex purchase returned an invalid expiration timestamp', [
+                'expiration' => $providerExpiresAt,
+                'response' => $data,
+            ]);
+
+            throw new Exception(__('sms.unable_to_purchase'), 1001, $exception);
+        }
+
         $countryCode = $service->country_code;
 
         $phoneNumber = $data['phone_number'];
@@ -66,7 +87,7 @@ class SmsCodexService
             'provider' => 'smscodex',
             'phone_number' => $phoneNumber,
             'country_code' => '+'.$countryCode,
-            'expires_at' => Carbon::now()->addMinutes(20),
+            'expires_at' => $expiresAt,
         ]);
     }
 

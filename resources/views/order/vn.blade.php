@@ -147,6 +147,11 @@
             background: var(--gray-soft);
         }
 
+        .status-badge[data-status="refund_pending"] {
+            color: var(--amber);
+            background: var(--amber-soft);
+        }
+
         .order-body {
             display: grid;
             grid-template-columns: minmax(0, 1.08fr) minmax(280px, .92fr);
@@ -357,6 +362,31 @@
 
         .notice strong {
             color: #455165;
+        }
+
+        .replacement-action {
+            display: none;
+            grid-column: 1 / -1;
+            text-align: center;
+        }
+
+        .replacement-btn {
+            padding: 12px 20px;
+            border: 0;
+            border-radius: 12px;
+            color: #fff;
+            background: var(--lavender);
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .replacement-btn:disabled {
+            cursor: wait;
+            opacity: .65;
+        }
+
+        .refund-btn {
+            background: var(--red);
         }
 
         .toast {
@@ -761,6 +791,18 @@
                     <br><br>
                     @lang('sms.contact')
                 </div>
+
+                <div class="replacement-action" id="replacementAction">
+                    <button class="replacement-btn" id="getAnotherNumber" type="button">
+                        Get Another Number
+                    </button>
+                </div>
+
+                <div class="replacement-action" id="refundAction">
+                    <button class="replacement-btn refund-btn" id="requestRefund" type="button">
+                        Request Refund
+                    </button>
+                </div>
             </div>
         </section>
     </main>
@@ -807,7 +849,101 @@
                     document.getElementById('code').innerText = event.sms_code;
                     document.getElementById('ding').play().catch(() => {});
                     document.getElementById('statusLabel').innerText = "Received";
+                    document.getElementById('statusBadge').dataset.status = 'received';
+                    document.getElementById('replacementAction').style.display = 'none';
+                    document.getElementById('refundAction').style.display = 'none';
+
+                    if (attemptTimer) {
+                        clearInterval(attemptTimer);
+                    }
                 });
+        }
+
+        let attemptTimer = null;
+        let subscribedAttemptId = null;
+
+        function showReplacementButton(show) {
+            document.getElementById('replacementAction').style.display = show ? 'block' : 'none';
+        }
+
+        function showRefundButton(show) {
+            document.getElementById('refundAction').style.display = show ? 'block' : 'none';
+        }
+
+        function displayAttempt(
+            data,
+            canOrderReplacement = false,
+            canRequestRefund = false,
+            purchaseStatus = 'pending'
+        ) {
+            if (data.order_id && Number(data.order_id) !== Number(subscribedAttemptId)) {
+                subscribeToSmsCode(data.order_id);
+                subscribedAttemptId = data.order_id;
+            }
+
+            document.getElementById('phone').innerText = data.number || '';
+            document.getElementById('country').innerText = data.country_code || '';
+
+            const serviceName = document.getElementById('serviceName');
+            const serviceIcon = document.getElementById('serviceIcon');
+            serviceName.innerText = data.serviceName || '';
+
+            if (data.serviceIcon) {
+                serviceIcon.src = data.serviceIcon;
+                serviceIcon.alt = data.serviceName || '';
+                serviceIcon.hidden = false;
+            }
+
+            const hasCode = data.sms_code !== '' && data.sms_code !== null && data.sms_code !== undefined;
+            document.getElementById('loading').style.display = hasCode ? 'none' : 'block';
+            document.getElementById('smsCode').style.display = hasCode ? 'block' : 'none';
+            document.getElementById('code').innerText = data.sms_code || '';
+
+            const allowedStatuses = ['waiting', 'received', 'expired', 'refunded'];
+            const status = allowedStatuses.includes(data.status) ? data.status : 'waiting';
+            document.getElementById('statusBadge').dataset.status = status;
+            document.getElementById('statusLabel').innerText = data.statusLabel || '';
+
+            if (purchaseStatus === 'refund_pending') {
+                document.getElementById('statusBadge').dataset.status = 'refund_pending';
+                document.getElementById('statusLabel').innerText = 'Refund Pending';
+            }
+
+            if (attemptTimer) {
+                clearInterval(attemptTimer);
+                attemptTimer = null;
+            }
+
+            const timer = document.getElementById('timer');
+            let total = Math.max(0, Number(data.expires_at) || 0);
+            const actionsAllowedWhenTimerEnds = purchaseStatus === 'pending' && status === 'waiting' && !hasCode;
+            showReplacementButton(Boolean(canOrderReplacement));
+            showRefundButton(Boolean(canRequestRefund));
+
+            const updateTimer = () => {
+                const minutes = Math.floor(total / 60);
+                const seconds = Math.floor(total % 60);
+                timer.innerText = String(minutes).padStart(2, '0') + ':' +
+                    String(seconds).padStart(2, '0');
+            };
+
+            updateTimer();
+
+            if (total > 0 && status === 'waiting') {
+                attemptTimer = setInterval(() => {
+                    total--;
+                    updateTimer();
+
+                    if (total <= 0) {
+                        clearInterval(attemptTimer);
+                        attemptTimer = null;
+                        document.getElementById('statusBadge').dataset.status = 'expired';
+                        document.getElementById('statusLabel').innerText = 'Expired';
+                        showReplacementButton(actionsAllowedWhenTimerEnds);
+                        showRefundButton(actionsAllowedWhenTimerEnds);
+                    }
+                }, 1000);
+            }
         }
 
         const steps = [
@@ -874,7 +1010,12 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    subscribeToSmsCode(data.data.order_id);
+                    displayAttempt(
+                        data.data,
+                        data.can_order_replacement,
+                        data.can_request_refund,
+                        data.purchase_status
+                    );
 
                     setTimeout(() => {
                         complete(1);
@@ -907,81 +1048,6 @@
                         }
                     }, 2500);
 
-                    const phone = document.getElementById('phone');
-                    const country = document.getElementById('country');
-                    const code = document.getElementById('code');
-
-                    if (phone) {
-                        phone.innerText = data.data.number;
-                    }
-
-                    if (country) {
-                        country.innerText = data.data.country_code;
-                    }
-
-                    if (code && data.data.sms_code != '' && data.data.sms_code != null && data.data.sms_code != undefined) {
-                        document.getElementById('loading').style.display = 'none';
-                        document.getElementById('smsCode').style.display = 'block';
-                        code.innerText = data.data.sms_code || '';
-                    }
-
-                    const serviceName = document.getElementById('serviceName');
-                    const serviceIcon = document.getElementById('serviceIcon');
-
-                    if (serviceName) {
-                        serviceName.innerText = data.data.serviceName || '';
-                    }
-
-                    if (serviceIcon && data.data.serviceIcon) {
-                        serviceIcon.src = data.data.serviceIcon;
-                        serviceIcon.alt = data.data.serviceName || '';
-                        serviceIcon.hidden = false;
-                    }
-
-                    const statusBadge = document.getElementById('statusBadge');
-                    const statusLabel = document.getElementById('statusLabel');
-                    const allowedStatuses = ['waiting', 'received', 'expired', 'refunded'];
-                    const status = allowedStatuses.includes(data.data.status) ?
-                        data.data.status :
-                        'waiting';
-
-                    if (statusBadge) {
-                        statusBadge.dataset.status = status;
-                    }
-
-                    if (statusLabel) {
-                        statusLabel.innerText = data.data.statusLabel || '';
-                    }
-
-                    if (data.data.expires_at > 0 && data.data.status === 'waiting') {
-                        let total = Number(data.data.expires_at);
-                        const timer = document.getElementById('timer');
-
-                        const updateTimer = () => {
-                            const minutes = Math.floor(total / 60);
-                            let seconds = total % 60;
-                            seconds = Math.floor(seconds);
-                            timer.innerText =
-                                String(minutes).padStart(2, '0') + ':' +
-                                String(seconds).padStart(2, '0');
-                        };
-
-                        updateTimer();
-
-                        const interval = setInterval(() => {
-                            total--;
-
-                            if (total <= 0) {
-                                total = 0;
-                                updateTimer();
-                                clearInterval(interval);
-                                statusLabel.innerText = 'Expired';
-                                return;
-                            }
-
-                            updateTimer();
-                        }, 1000);
-                    }
                 } else {
                     if (data.type === 'purchase_error') {
                         if (retry == false) {
@@ -1005,6 +1071,104 @@
             }
         }
 
+        async function orderReplacement() {
+            const button = document.getElementById('getAnotherNumber');
+            const uniqueCode = new URLSearchParams(window.location.search).get('uniquecode');
+
+            if (!uniqueCode || button.disabled) {
+                return;
+            }
+
+            button.disabled = true;
+
+            try {
+                const response = await fetch('{{ url('/api/vm/replacement') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document
+                            .querySelector('meta[name="csrf-token"]')
+                            .getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        uniquecode: uniqueCode
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    displayAttempt(
+                        data.data,
+                        data.can_order_replacement,
+                        data.can_request_refund,
+                        data.purchase_status
+                    );
+                    return;
+                }
+
+                if (data.can_order_replacement === false) {
+                    showReplacementButton(false);
+                }
+
+                window.alert(data.message || genericVerificationError);
+            } catch (error) {
+                console.error('Replacement API Error:', error);
+                window.alert(genericVerificationError);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        async function requestRefund() {
+            const button = document.getElementById('requestRefund');
+            const uniqueCode = new URLSearchParams(window.location.search).get('uniquecode');
+
+            if (!uniqueCode || button.disabled) {
+                return;
+            }
+
+            button.disabled = true;
+
+            try {
+                const response = await fetch('{{ url('/api/vm/refund-request') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document
+                            .querySelector('meta[name="csrf-token"]')
+                            .getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        uniquecode: uniqueCode
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showRefundButton(false);
+                    showReplacementButton(false);
+                    document.getElementById('statusBadge').dataset.status = 'refund_pending';
+                    document.getElementById('statusLabel').innerText = 'Refund Pending';
+                    return;
+                }
+
+                if (data.can_request_refund === false) {
+                    showRefundButton(false);
+                }
+
+                window.alert(data.message || genericVerificationError);
+            } catch (error) {
+                console.error('Refund Request API Error:', error);
+                window.alert(genericVerificationError);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('retryVerification').addEventListener('click', () => {
                 const loading = document.getElementById('verificationLoading');
@@ -1015,6 +1179,9 @@
                 retry = true;
                 verifyPayment();
             });
+
+            document.getElementById('getAnotherNumber').addEventListener('click', orderReplacement);
+            document.getElementById('requestRefund').addEventListener('click', requestRefund);
 
             verifyPayment();
         });

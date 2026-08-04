@@ -5,10 +5,9 @@ namespace App\Services;
 use App\Models\PhoneAttempt;
 use App\Models\Purchase;
 use App\Models\VirtualNumber;
-use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Mockery\CountValidator\Exception;
 
 class NumberlandService
 {
@@ -65,6 +64,31 @@ class NumberlandService
 
         $phoneNumber = $data['NUMBER'];
 
+        $duration = $data['TIME'] ?? null;
+
+        if (! is_string($duration) || ! preg_match('/^\d+:[0-5]\d:[0-5]\d$/', $duration)) {
+            Log::error('NumberLand purchase returned an invalid expiration duration', [
+                'expiration' => $duration,
+                'response' => $data,
+            ]);
+
+            throw new Exception(__('sms.unable_to_purchase'), 1001);
+        }
+
+        [$hours, $minutes, $seconds] = array_map('intval', explode(':', $duration));
+        $durationInSeconds = ($hours * 3600) + ($minutes * 60) + $seconds;
+
+        if ($durationInSeconds <= 0) {
+            Log::error('NumberLand purchase returned a non-positive expiration duration', [
+                'expiration' => $duration,
+                'response' => $data,
+            ]);
+
+            throw new Exception(__('sms.unable_to_purchase'), 1001);
+        }
+
+        $expiresAt = now()->addSeconds($durationInSeconds);
+
         if (
             $countryCode !== '' &&
             str_starts_with($phoneNumber, $countryCode)
@@ -80,7 +104,7 @@ class NumberlandService
             'provider' => 'numberland',
             'phone_number' => $phoneNumber,
             'country_code' => '+'.$countryCode,
-            'expires_at' => Carbon::now()->addMinutes(20),
+            'expires_at' => $expiresAt,
         ]);
     }
 

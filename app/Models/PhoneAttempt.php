@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PhoneAttemptStatus;
+use App\Enums\PurchaseStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -48,6 +49,10 @@ class PhoneAttempt extends Model
         $this->update([
             'sms_code' => $code,
             'status' => PhoneAttemptStatus::RECEIVED->value,
+        ]);
+
+        $this->purchase()->update([
+            'status' => PurchaseStatus::COMPLETED->value,
         ]);
     }
 }

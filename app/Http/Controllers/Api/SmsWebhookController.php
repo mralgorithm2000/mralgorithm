@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\PhoneAttemptStatus;
 use App\Http\Controllers\Controller;
 use App\Models\PhoneAttempt;
 use App\Services\SmsCodeBroadcastService;
@@ -77,10 +76,7 @@ class SmsWebhookController extends Controller
             ->where('provider', 'smscodex')
             ->firstOrFail();
 
-        $attempt->update([
-            'sms_code' => $smsCode,
-            'status' => PhoneAttemptStatus::RECEIVED->value,
-        ]);
+        $attempt->receiveCode($smsCode);
 
         // Send to frontend via Pusher
         $smsCodeBroadcastService->broadcast($attempt->id, $smsCode);

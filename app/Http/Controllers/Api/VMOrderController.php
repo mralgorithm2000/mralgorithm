@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\PhoneAttemptStatus;
+use App\Enums\PurchaseStatus;
+use App\Enums\RefundRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Option;
 use App\Models\PhoneAttempt;
@@ -13,6 +15,7 @@ use App\Services\NumberlandService;
 use App\Services\SmsCodexService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -38,27 +41,16 @@ class VMOrderController extends Controller
         }
 
         if ($purchase && ($attempt = $purchase->activeAttempt())) {
-            $this->authorizeAttemptChannel($request, $attempt);
+            return $this->attemptResponse($request, $purchase, $attempt);
+        }
 
-            $service = $purchase->virtualNumber;
-            $serviceDetails = $this->getServiceDetails($service->type);
-            $statusDetails = $this->getStatusDetails($attempt->status);
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'number' => $attempt->phone_number,
-                    'country_code' => $attempt->country_code,
-                    'expires_at' => $this->dateToMinutes($attempt->expires_at),
-                    'serviceName' => $serviceDetails['name'],
-                    'serviceIcon' => $serviceDetails['icon'],
-                    'status' => $statusDetails['value'],
-                    'statusLabel' => $statusDetails['label'],
-                    'order_id' => $attempt->id,
-                    'sms_code' => $attempt->sms_code,
-                ],
-                'message' => __('payment.success'),
-            ]);
+        if ($purchase) {
+            return $this->attemptResponse(
+                $request,
+                $purchase,
+                $purchase->latestAttempt(),
+                $purchase->canOrderReplacement(),
+            );
         }
 
         try {
@@ -87,9 +79,148 @@ class VMOrderController extends Controller
 
         return response()->json([
             'success' => true,
+            'can_order_replacement' => false,
+            'can_request_refund' => false,
+            'purchase_status' => PurchaseStatus::PENDING->value,
+            'refund_status' => null,
             'data' => $job['data'],
             'message' => __('payment.success'),
         ]);
+    }
+
+    public function replacement(Request $request)
+    {
+        $validated = $request->validate([
+            'uniquecode' => ['required', 'string', 'max:255'],
+        ]);
+
+        try {
+            $result = DB::transaction(function () use ($validated) {
+                $purchase = Purchase::query()
+                    ->where('unique_code', $validated['uniquecode'])
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if (! $purchase->allowsReplacement()) {
+                    return [
+                        'purchase' => $purchase,
+                        'attempt' => null,
+                        'eligible' => false,
+                    ];
+                }
+
+                if ($attempt = $purchase->unexpiredAttempt()) {
+                    return [
+                        'purchase' => $purchase,
+                        'attempt' => $attempt,
+                        'eligible' => true,
+                    ];
+                }
+
+                $service = $purchase->virtualNumber;
+                $serviceClass = $this->getSourceService($service->source);
+                $serviceInstance = new $serviceClass;
+
+                return [
+                    'purchase' => $purchase,
+                    'attempt' => $serviceInstance->getNumber($service, $purchase),
+                    'eligible' => true,
+                ];
+            }, 3);
+        } catch (\Exception $exception) {
+            Log::error('Replacement number purchase failed', [
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => __('sms.unable_to_purchase'),
+            ], 422);
+        }
+
+        if (! $result['eligible']) {
+            return response()->json([
+                'success' => false,
+                'can_order_replacement' => false,
+                'message' => __('sms.unable_to_purchase'),
+            ], 409);
+        }
+
+        return $this->attemptResponse($request, $result['purchase'], $result['attempt']);
+    }
+
+    public function requestRefund(Request $request)
+    {
+        $validated = $request->validate([
+            'uniquecode' => ['required', 'string', 'max:255'],
+            'reason' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $result = DB::transaction(function () use ($validated) {
+                $purchase = Purchase::query()
+                    ->where('unique_code', $validated['uniquecode'])
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($refundRequest = $purchase->refundRequest()->first()) {
+                    return [
+                        'purchase' => $purchase,
+                        'refund_request' => $refundRequest,
+                        'created' => false,
+                    ];
+                }
+
+                if (! $purchase->canRequestRefund()) {
+                    return [
+                        'purchase' => $purchase,
+                        'refund_request' => null,
+                        'created' => false,
+                    ];
+                }
+
+                $refundRequest = $purchase->refundRequest()->create([
+                    'status' => RefundRequestStatus::PENDING->value,
+                    'reason' => $validated['reason'] ?? null,
+                    'requested_at' => now(),
+                ]);
+
+                $purchase->update([
+                    'status' => PurchaseStatus::REFUND_PENDING->value,
+                ]);
+
+                return [
+                    'purchase' => $purchase,
+                    'refund_request' => $refundRequest,
+                    'created' => true,
+                ];
+            }, 3);
+        } catch (\Exception $exception) {
+            Log::error('Refund request failed', [
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => __('sms.unable_to_purchase'),
+            ], 422);
+        }
+
+        if (! $result['refund_request']) {
+            return response()->json([
+                'success' => false,
+                'can_request_refund' => false,
+                'message' => __('sms.unable_to_purchase'),
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'created' => $result['created'],
+            'purchase_status' => $result['purchase']->status,
+            'refund_status' => $result['refund_request']->status,
+            'can_request_refund' => false,
+        ], $result['created'] ? 201 : 200);
     }
 
     private function doTheJob($service_id, $options, $invoice_id, string $uniqueCode, ?Purchase $purchase)
@@ -142,6 +273,40 @@ class VMOrderController extends Controller
         $request->session()->put("phone_attempt_ids.{$attempt->id}", true);
     }
 
+    private function attemptResponse(
+        Request $request,
+        Purchase $purchase,
+        ?PhoneAttempt $attempt,
+        bool $canOrderReplacement = false,
+    ) {
+        if ($attempt) {
+            $this->authorizeAttemptChannel($request, $attempt);
+        }
+
+        $serviceDetails = $this->getServiceDetails($purchase->virtualNumber->type);
+        $statusDetails = $this->getStatusDetails($attempt?->status);
+
+        return response()->json([
+            'success' => true,
+            'can_order_replacement' => $canOrderReplacement,
+            'can_request_refund' => $purchase->canRequestRefund(),
+            'purchase_status' => $purchase->status,
+            'refund_status' => $purchase->refundRequest()->value('status'),
+            'data' => [
+                'number' => $attempt?->phone_number,
+                'country_code' => $attempt?->country_code,
+                'expires_at' => $attempt ? $this->dateToMinutes($attempt->expires_at) : 0,
+                'serviceName' => $serviceDetails['name'],
+                'serviceIcon' => $serviceDetails['icon'],
+                'status' => $statusDetails['value'],
+                'statusLabel' => $statusDetails['label'],
+                'order_id' => $attempt?->id,
+                'sms_code' => $attempt?->sms_code,
+            ],
+            'message' => __('payment.success'),
+        ]);
+    }
+
     private function getStatusDetails(?string $status): array
     {
         $orderStatus = PhoneAttemptStatus::tryFrom((string) $status)
@@ -189,6 +354,6 @@ class VMOrderController extends Controller
         $now = Carbon::now();
         $expires = Carbon::parse($date);
 
-        return $now->diffInSeconds($expires);
+        return max(0, $now->diffInSeconds($expires, false));
     }
 }

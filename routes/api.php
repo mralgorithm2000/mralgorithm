@@ -23,5 +23,11 @@ Route::post('order-status', [OrderStatusController::class, 'check'])
 Route::post('vm/verify', [VMOrderController::class, 'verify'])
     ->middleware(['web', 'throttle:6,1']);
 
-Route::post('sms/webhook/smscodex', [SmsWebhookController::class,"smscodex"])
+Route::post('vm/replacement', [VMOrderController::class, 'replacement'])
+    ->middleware(['web', 'throttle:6,1']);
+
+Route::post('vm/refund-request', [VMOrderController::class, 'requestRefund'])
+    ->middleware(['web', 'throttle:6,1']);
+
+Route::post('sms/webhook/smscodex', [SmsWebhookController::class, 'smscodex'])
     ->middleware('throttle:60,1');
