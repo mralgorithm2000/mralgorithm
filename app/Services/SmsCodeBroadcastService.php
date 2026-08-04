@@ -6,8 +6,8 @@ use App\Events\SmsCodeReceived;
 
 class SmsCodeBroadcastService
 {
-    public function broadcast(int $orderId, string $smsCode): void
+    public function broadcast(int $attemptId, string $smsCode): void
     {
-        SmsCodeReceived::dispatch($orderId, $smsCode);
+        SmsCodeReceived::dispatch($attemptId, $smsCode);
     }
 }

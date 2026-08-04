@@ -26,7 +26,7 @@ class SmsWebhookRequest extends FormRequest
             'order_id' => [
                 'required',
                 'integer',
-                Rule::exists('number_orders', 'id'),
+                Rule::exists('phone_attempts', 'id'),
             ],
             'sms_code' => ['required', 'string', 'max:255'],
         ];

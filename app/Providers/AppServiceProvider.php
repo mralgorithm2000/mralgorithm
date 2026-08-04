@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Auth::viaRequest('order-session', function (Request $request): ?GenericUser {
-            if (! $request->session()->has('number_order_ids')) {
+            if (! $request->session()->has('phone_attempt_ids')) {
                 return null;
             }
 

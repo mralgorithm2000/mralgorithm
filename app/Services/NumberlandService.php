@@ -2,6 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\PhoneAttempt;
+use App\Models\Purchase;
+use App\Models\VirtualNumber;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Mockery\CountValidator\Exception;
@@ -13,7 +17,7 @@ class NumberlandService
      *
      * Replace these IDs with the correct values from the getinfo API.
      */
-    public function getNumber($service, $order_id): array
+    public function getNumber(VirtualNumber $service, Purchase $purchase): PhoneAttempt
     {
 
         $response = Http::get(
@@ -71,11 +75,13 @@ class NumberlandService
             );
         }
 
-        return [
-            'order_id' => $data['ID'],
-            'number' => $phoneNumber,
+        return $purchase->phoneAttempts()->create([
+            'provider_order_id' => $data['ID'],
+            'provider' => 'numberland',
+            'phone_number' => $phoneNumber,
             'country_code' => '+'.$countryCode,
-        ];
+            'expires_at' => Carbon::now()->addMinutes(20),
+        ]);
     }
 
     public function getOrderStatus(string $order_id): array

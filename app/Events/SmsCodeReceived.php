@@ -12,13 +12,13 @@ class SmsCodeReceived implements ShouldBroadcastNow
     use Dispatchable, SerializesModels;
 
     public function __construct(
-        public readonly int $orderId,
+        public readonly int $attemptId,
         public readonly string $smsCode,
     ) {}
 
     public function broadcastOn(): PrivateChannel
     {
-        return new PrivateChannel("number-order.{$this->orderId}");
+        return new PrivateChannel("phone-attempt.{$this->attemptId}");
     }
 
     public function broadcastAs(): string
@@ -32,7 +32,7 @@ class SmsCodeReceived implements ShouldBroadcastNow
     public function broadcastWith(): array
     {
         return [
-            'order_id' => $this->orderId,
+            'order_id' => $this->attemptId,
             'sms_code' => $this->smsCode,
         ];
     }

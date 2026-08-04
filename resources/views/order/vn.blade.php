@@ -796,7 +796,7 @@
                 return;
             }
 
-            window.Echo.private(`number-order.${orderId}`)
+            window.Echo.private(`phone-attempt.${orderId}`)
                 .listen('.sms.code.received', (event) => {
                     if (Number(event.order_id) !== Number(orderId)) {
                         return;

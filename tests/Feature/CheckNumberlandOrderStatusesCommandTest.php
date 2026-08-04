@@ -2,8 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Enums\NumberOrderStatus;
-use App\Models\NumberOrder;
+use App\Enums\PhoneAttemptStatus;
+use App\Models\PhoneAttempt;
+use App\Models\Purchase;
 use App\Models\VirtualNumber;
 use App\Services\NumberlandService;
 use App\Services\SmsCodeBroadcastService;
@@ -25,14 +26,19 @@ class CheckNumberlandOrderStatusesCommandTest extends TestCase
             'plati_id' => 'numberland-test',
         ]);
 
-        $order = NumberOrder::create([
+        $purchase = Purchase::create([
             'virtual_number_id' => $service->id,
+            'unique_code' => 'code-1',
             'plati_order_id' => 'invoice-1',
+        ]);
+        $attempt = PhoneAttempt::create([
+            'purchase_id' => $purchase->id,
             'phone_number' => '123456789',
             'country_code' => '+1',
-            'status' => NumberOrderStatus::WAITING->value,
+            'status' => PhoneAttemptStatus::WAITING->value,
             'expires_at' => now()->addMinute(),
-            'source_order_id' => 'source-1',
+            'provider_order_id' => 'source-1',
+            'provider' => 'numberland',
         ]);
 
         $this->mock(NumberlandService::class, function (MockInterface $mock) {
@@ -42,20 +48,20 @@ class CheckNumberlandOrderStatusesCommandTest extends TestCase
                 ->andReturn(['last_code' => '654321']);
         });
 
-        $this->mock(SmsCodeBroadcastService::class, function (MockInterface $mock) use ($order) {
+        $this->mock(SmsCodeBroadcastService::class, function (MockInterface $mock) use ($attempt) {
             $mock->shouldReceive('broadcast')
                 ->once()
-                ->with($order->id, '654321');
+                ->with($attempt->id, '654321');
         });
 
         $this->artisan('numberland:check-order-statuses')
-            ->expectsOutput('Checked 1 Numberland order(s); received 1 code(s).')
+            ->expectsOutput('Checked 1 Numberland attempt(s); received 1 code(s).')
             ->assertSuccessful();
 
-        $this->assertDatabaseHas('number_orders', [
-            'id' => $order->id,
+        $this->assertDatabaseHas('phone_attempts', [
+            'id' => $attempt->id,
             'sms_code' => '654321',
-            'status' => NumberOrderStatus::RECEIVED->value,
+            'status' => PhoneAttemptStatus::RECEIVED->value,
         ]);
     }
 
@@ -69,14 +75,19 @@ class CheckNumberlandOrderStatusesCommandTest extends TestCase
             'plati_id' => 'numberland-expired',
         ]);
 
-        NumberOrder::create([
+        $purchase = Purchase::create([
             'virtual_number_id' => $service->id,
+            'unique_code' => 'code-expired',
             'plati_order_id' => 'invoice-expired',
+        ]);
+        PhoneAttempt::create([
+            'purchase_id' => $purchase->id,
             'phone_number' => '123456789',
             'country_code' => '+1',
-            'status' => NumberOrderStatus::WAITING->value,
+            'status' => PhoneAttemptStatus::WAITING->value,
             'expires_at' => now()->subSecond(),
-            'source_order_id' => 'source-expired',
+            'provider_order_id' => 'source-expired',
+            'provider' => 'numberland',
         ]);
 
         $this->mock(NumberlandService::class, function (MockInterface $mock) {
@@ -88,7 +99,7 @@ class CheckNumberlandOrderStatusesCommandTest extends TestCase
         });
 
         $this->artisan('numberland:check-order-statuses')
-            ->expectsOutput('Checked 0 Numberland order(s); received 0 code(s).')
+            ->expectsOutput('Checked 0 Numberland attempt(s); received 0 code(s).')
             ->assertSuccessful();
     }
 }

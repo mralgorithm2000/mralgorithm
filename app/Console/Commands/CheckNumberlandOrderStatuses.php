@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\NumberOrderStatus;
-use App\Models\NumberOrder;
+use App\Enums\PhoneAttemptStatus;
+use App\Models\PhoneAttempt;
 use App\Services\NumberlandService;
 use App\Services\SmsCodeBroadcastService;
 use Illuminate\Console\Command;
@@ -23,19 +23,17 @@ class CheckNumberlandOrderStatuses extends Command
         $checkedCount = 0;
         $receivedCount = 0;
 
-        NumberOrder::query()
-            ->where('status', NumberOrderStatus::WAITING->value)
+        PhoneAttempt::query()
+            ->where('status', PhoneAttemptStatus::WAITING->value)
             ->whereNull('sms_code')
-            ->whereNotNull('source_order_id')
+            ->whereNotNull('provider_order_id')
             ->where(function ($query) {
                 $query->whereNull('expires_at')
                     ->orWhere('expires_at', '>', now());
             })
-            ->whereHas('virtualNumber', function ($query) {
-                $query->where('source', 'numberland');
-            })
+            ->where('provider', 'numberland')
             ->lazyById()
-            ->each(function (NumberOrder $order) use (
+            ->each(function (PhoneAttempt $attempt) use (
                 $numberlandService,
                 $smsCodeBroadcastService,
                 &$checkedCount,
@@ -44,7 +42,7 @@ class CheckNumberlandOrderStatuses extends Command
                 $checkedCount++;
 
                 try {
-                    $status = $numberlandService->getOrderStatus($order->source_order_id);
+                    $status = $numberlandService->getOrderStatus($attempt->provider_order_id);
                     $smsCode = $status['last_code']
                         ?? data_get($status, 'sms.0.code');
 
@@ -52,13 +50,13 @@ class CheckNumberlandOrderStatuses extends Command
                         return;
                     }
 
-                    $updated = NumberOrder::query()
-                        ->whereKey($order->getKey())
-                        ->where('status', NumberOrderStatus::WAITING->value)
+                    $updated = PhoneAttempt::query()
+                        ->whereKey($attempt->getKey())
+                        ->where('status', PhoneAttemptStatus::WAITING->value)
                         ->whereNull('sms_code')
                         ->update([
                             'sms_code' => (string) $smsCode,
-                            'status' => NumberOrderStatus::RECEIVED->value,
+                            'status' => PhoneAttemptStatus::RECEIVED->value,
                         ]);
 
                     if (! $updated) {
@@ -66,17 +64,17 @@ class CheckNumberlandOrderStatuses extends Command
                     }
 
                     $receivedCount++;
-                    $smsCodeBroadcastService->broadcast($order->id, (string) $smsCode);
+                    $smsCodeBroadcastService->broadcast($attempt->id, (string) $smsCode);
                 } catch (Throwable $exception) {
                     Log::error('NumberLand scheduled order status check failed', [
-                        'number_order_id' => $order->id,
-                        'source_order_id' => $order->source_order_id,
+                        'phone_attempt_id' => $attempt->id,
+                        'provider_order_id' => $attempt->provider_order_id,
                         'exception' => $exception->getMessage(),
                     ]);
                 }
             });
 
-        $this->info("Checked {$checkedCount} Numberland order(s); received {$receivedCount} code(s).");
+        $this->info("Checked {$checkedCount} Numberland attempt(s); received {$receivedCount} code(s).");
 
         return self::SUCCESS;
     }

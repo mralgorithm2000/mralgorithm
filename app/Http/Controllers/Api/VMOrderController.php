@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\NumberOrderStatus;
+use App\Enums\PhoneAttemptStatus;
 use App\Http\Controllers\Controller;
-use App\Models\NumberOrder;
 use App\Models\Option;
+use App\Models\PhoneAttempt;
+use App\Models\Purchase;
 use App\Models\VirtualNumber;
 use App\Services\DigisellerService;
 use App\Services\NumberlandService;
@@ -22,46 +23,58 @@ class VMOrderController extends Controller
         $digiseller = new DigisellerService;
         $verification = $digiseller->verifyPurchase($request->uniquecode);
 
-        if(@$verification['inv'] == ''){
+        if (@$verification['inv'] == '') {
             return response()->json([
                 'success' => false,
-                'message' => __('payment.error')
+                'message' => __('payment.error'),
             ]);
         }
 
-        $order = NumberOrder::where('plati_order_id', $verification['inv'])->first();
+        $purchase = Purchase::where('unique_code', $request->uniquecode)->first()
+            ?? Purchase::where('plati_order_id', $verification['inv'])->first();
 
-        if ($order) {
-            $this->authorizeOrderChannel($request, $order);
+        if ($purchase && str_starts_with($purchase->unique_code, 'legacy-')) {
+            $purchase->update(['unique_code' => $request->uniquecode]);
+        }
 
-            $service = $order->service;
+        if ($purchase && ($attempt = $purchase->activeAttempt())) {
+            $this->authorizeAttemptChannel($request, $attempt);
+
+            $service = $purchase->virtualNumber;
             $serviceDetails = $this->getServiceDetails($service->type);
-            $statusDetails = $this->getStatusDetails($order->status);
+            $statusDetails = $this->getStatusDetails($attempt->status);
 
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'number' => $order->phone_number,
-                    'country_code' => $order->country_code,
-                    'expires_at' => $this->dateToMinutes($order->expires_at),
+                    'number' => $attempt->phone_number,
+                    'country_code' => $attempt->country_code,
+                    'expires_at' => $this->dateToMinutes($attempt->expires_at),
                     'serviceName' => $serviceDetails['name'],
                     'serviceIcon' => $serviceDetails['icon'],
                     'status' => $statusDetails['value'],
                     'statusLabel' => $statusDetails['label'],
-                    'order_id' => $order->id,
-                    'sms_code' => $order->sms_code,
+                    'order_id' => $attempt->id,
+                    'sms_code' => $attempt->sms_code,
                 ],
                 'message' => __('payment.success'),
             ]);
         }
 
-        try{
-            $job = $this->doTheJob($verification['id_goods'], $verification['options'], $verification['inv']);
+        try {
+            $job = $this->doTheJob(
+                $verification['id_goods'],
+                $verification['options'],
+                $verification['inv'],
+                $request->uniquecode,
+                $purchase,
+            );
         } catch (\Exception $e) {
-             Log::info('puchace ctach status', [
+            Log::info('puchace ctach status', [
                 'status' => 'error',
                 'body' => $e->getMessage(),
             ]);
+
             return response()->json([
                 'success' => false,
                 'message' => __('sms.unable_to_purchase'),
@@ -70,7 +83,7 @@ class VMOrderController extends Controller
         }
         // $job = $this->doTheJob($verification['id_goods'], $verification['options'], $verification['inv']);
 
-        $this->authorizeOrderChannel($request, $job['order']);
+        $this->authorizeAttemptChannel($request, $job['attempt']);
 
         return response()->json([
             'success' => true,
@@ -79,7 +92,7 @@ class VMOrderController extends Controller
         ]);
     }
 
-    private function doTheJob($service_id, $options, $invoice_id)
+    private function doTheJob($service_id, $options, $invoice_id, string $uniqueCode, ?Purchase $purchase)
     {
         $optionsArr = [];
 
@@ -94,38 +107,45 @@ class VMOrderController extends Controller
         $service = VirtualNumber::where('plati_id', $plati_id)->first();
         $serviceDetails = $this->getServiceDetails($service->type);
 
+        $purchase ??= Purchase::firstOrCreate(
+            ['unique_code' => $uniqueCode],
+            [
+                'plati_order_id' => $invoice_id,
+                'virtual_number_id' => $service->id,
+            ],
+        );
+
         $serviceClass = $this->getSourceService($service->source);
         $serviceInstance = new $serviceClass;
-        $number = $serviceInstance->getNumber($service, $invoice_id);
+        $attempt = $serviceInstance->getNumber($service, $purchase);
 
-        $order = $this->saveOrder($number['number'], $number['country_code'], 20, $service->id, $invoice_id, $number['order_id']);
-        $statusDetails = $this->getStatusDetails($order->status);
+        $statusDetails = $this->getStatusDetails($attempt->status);
 
         return [
-            'order' => $order,
+            'attempt' => $attempt,
             'data' => [
-                'number' => $number['number'],
-                'country_code' => $number['country_code'],
-                'expires_at' => $this->dateToMinutes(Carbon::now()->addMinutes(20)),
+                'number' => $attempt->phone_number,
+                'country_code' => $attempt->country_code,
+                'expires_at' => $this->dateToMinutes($attempt->expires_at),
                 'serviceName' => $serviceDetails['name'],
                 'serviceIcon' => $serviceDetails['icon'],
                 'status' => $statusDetails['value'],
                 'statusLabel' => $statusDetails['label'],
-                'order_id' => $order->id,
-                'sms_code' => ''
+                'order_id' => $attempt->id,
+                'sms_code' => '',
             ],
         ];
     }
 
-    private function authorizeOrderChannel(Request $request, NumberOrder $order): void
+    private function authorizeAttemptChannel(Request $request, PhoneAttempt $attempt): void
     {
-        $request->session()->put("number_order_ids.{$order->id}", true);
+        $request->session()->put("phone_attempt_ids.{$attempt->id}", true);
     }
 
     private function getStatusDetails(?string $status): array
     {
-        $orderStatus = NumberOrderStatus::tryFrom((string) $status)
-            ?? NumberOrderStatus::WAITING;
+        $orderStatus = PhoneAttemptStatus::tryFrom((string) $status)
+            ?? PhoneAttemptStatus::WAITING;
 
         return [
             'value' => $orderStatus->value,
@@ -170,17 +190,5 @@ class VMOrderController extends Controller
         $expires = Carbon::parse($date);
 
         return $now->diffInSeconds($expires);
-    }
-
-    private function saveOrder($number, $country_code, $expires_at, $service_id, $invoice_id, $order_id)
-    {
-        return NumberOrder::create([
-            'virtual_number_id' => $service_id,
-            'plati_order_id' => $invoice_id,
-            'phone_number' => $number,
-            'country_code' => $country_code,
-            'expires_at' => Carbon::now()->addMinutes($expires_at),
-            'source_order_id' => $order_id
-        ]);
     }
 }

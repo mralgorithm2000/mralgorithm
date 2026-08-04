@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\NumberOrderStatus;
+use App\Enums\PhoneAttemptStatus;
 use App\Http\Controllers\Controller;
-use App\Models\NumberOrder;
-use App\Services\NumberlandService;
+use App\Models\PhoneAttempt;
 use App\Services\SmsCodeBroadcastService;
 use App\Services\SmsCodexService;
 use Illuminate\Http\Request;
@@ -74,16 +73,17 @@ class SmsWebhookController extends Controller
             ]);
         }
 
-        $order = NumberOrder::where('source_order_id', $orderId)
+        $attempt = PhoneAttempt::where('provider_order_id', $orderId)
+            ->where('provider', 'smscodex')
             ->firstOrFail();
 
-        $order->update([
+        $attempt->update([
             'sms_code' => $smsCode,
-            'status' => NumberOrderStatus::RECEIVED->value,
+            'status' => PhoneAttemptStatus::RECEIVED->value,
         ]);
 
         // Send to frontend via Pusher
-        $smsCodeBroadcastService->broadcast($order->id, $smsCode);
+        $smsCodeBroadcastService->broadcast($attempt->id, $smsCode);
 
         return response()->json([
             'success' => true,

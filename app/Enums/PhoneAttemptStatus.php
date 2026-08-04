@@ -2,14 +2,11 @@
 
 namespace App\Enums;
 
-enum NumberOrderStatus: string
+enum PhoneAttemptStatus: string
 {
     case WAITING = 'waiting';
-
     case RECEIVED = 'received';
-
     case EXPIRED = 'expired';
-
     case REFUNDED = 'refunded';
 
     public function label(): string
