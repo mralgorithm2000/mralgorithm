@@ -329,7 +329,12 @@ class VMOrderController extends Controller
                 'name' => 'Instagram',
                 'icon' => asset('storage/icons/instagram.png'),
             ],
+            'openai' => [
+                'name' => 'OpenAI',
+                'icon' => asset('storage/icons/openai.png'),
+            ],
         ];
+
 
         $serviceType = Str::lower(trim((string) $type));
 
