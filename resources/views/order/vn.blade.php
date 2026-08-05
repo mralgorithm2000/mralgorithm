@@ -921,6 +921,7 @@
             showRefundButton(Boolean(canRequestRefund));
 
             const updateTimer = () => {
+                total = Math.max(0, total);
                 const minutes = Math.floor(total / 60);
                 const seconds = Math.floor(total % 60);
                 timer.innerText = String(minutes).padStart(2, '0') + ':' +
@@ -931,7 +932,7 @@
 
             if (total > 0 && status === 'waiting') {
                 attemptTimer = setInterval(() => {
-                    total--;
+                    total = Math.max(0, total - 1);
                     updateTimer();
 
                     if (total <= 0) {
