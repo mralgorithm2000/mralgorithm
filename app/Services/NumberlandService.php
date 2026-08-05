@@ -110,15 +110,13 @@ class NumberlandService
 
     public function getOrderStatus(string $order_id): array
     {
-
-        $url = config('services.numberland.base_url').'/v2.php'
-    .'?apikey='.urlencode(config('services.numberland.api_key'))
-    .'&method=checkstatus'
-    .'&id='.urlencode($order_id);
-
         $response = Http::timeout(30)
             ->connectTimeout(30)
-            ->get($url);
+            ->get(config('services.numberland.base_url').'/v2.php',[
+                'apikey' => config('services.numberland.api_key'),
+                'method' => 'checkstatus',
+                'id' => $order_id,
+            ]);
 
         if (! $response->successful()) {
 
