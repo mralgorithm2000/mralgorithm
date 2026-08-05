@@ -787,9 +787,14 @@
                 </div>
 
                 <div class="notice">
-                    <strong>@lang('sms.not_received')</strong>
-                    <br><br>
-                    @lang('sms.contact')
+                    <strong>Didn't receive an SMS code?</strong>
+                    <p>If the timer expires without receiving an SMS, two buttons will appear:</p>
+                    <ul>
+                        <li><strong>Get Another Number</strong> – Receive a new virtual number instantly.</li>
+                        <li><strong>Request Refund</strong> – Send a refund request directly to our team. If no SMS code
+                            was received for any number assigned to this purchase, your refund will be reviewed and
+                            processed within <strong>10 hours</strong>.</li>
+                    </ul>
                 </div>
 
                 <div class="replacement-action" id="replacementAction">
