@@ -22,7 +22,7 @@ class PaymentVerificationController extends Controller
             return response()->json([
                 'success' => true,
                 'order_id' => $verification['inv'],
-                'message' => __('payment.started_or_finished'),  
+                'message' => __('payment.started_or_finished'),
             ]);
         }
 
@@ -66,6 +66,10 @@ class PaymentVerificationController extends Controller
             'serviceLinkId' => $serviceLinkId,
             'order' => $order,
         ]);
+
+        return [
+            'user_code' => rand(1000000, 9999999),
+        ];
 
         $response = Http::asForm()->post('https://panel.smmflw.com/api/iran', [
             'key' => env('FOLLOWERAN_API_KEY'),
