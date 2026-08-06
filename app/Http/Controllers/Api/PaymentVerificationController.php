@@ -67,9 +67,9 @@ class PaymentVerificationController extends Controller
             'order' => $order,
         ]);
 
-        // return [
-        //     'user_code' => rand(1000000, 9999999),
-        // ];
+        return [
+            'user_code' => rand(1000000, 9999999),
+        ];
 
         $response = Http::asForm()->post('https://panel.smmflw.com/api/iran', [
             'key' => env('FOLLOWERAN_API_KEY'),
