@@ -15,9 +15,6 @@ class SmsWebhookController extends Controller
         Request $request,
         SmsCodeBroadcastService $smsCodeBroadcastService
     ) {
-        Log::info('SMSCodex webhook', [
-            'req' => $request->all(),
-        ]);
 
         Log::info('SMSCodex webhook', [
             'request' => $request->all(),
