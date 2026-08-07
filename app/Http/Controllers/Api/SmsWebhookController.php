@@ -19,15 +19,19 @@ class SmsWebhookController extends Controller
             'req' => $request->all(),
         ]);
 
-        $payload = $request->input('req.payload');
+        Log::info('SMSCodex webhook', [
+            'request' => $request->all(),
+        ]);
 
-        // Only process when the SMS has been received
+        $payload = $request->input('payload');
+
         if (
             ! $payload ||
             ($payload['stage'] ?? null) !== 'completed'
         ) {
             Log::info('sms codex status webhook', [
                 'status' => 'Ignored',
+                'stage' => $payload['stage'] ?? null,
             ]);
 
             return response()->json([
