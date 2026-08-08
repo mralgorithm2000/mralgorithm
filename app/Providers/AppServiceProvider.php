@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Auth\GenericUser;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
@@ -22,6 +23,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Relation::enforceMorphMap([
+            'virtual_number' => \App\Models\VirtualNumber::class,
+            'sm_service' => \App\Models\SmService::class,
+        ]);
+
         Auth::viaRequest('order-session', function (Request $request): ?GenericUser {
             if (! $request->session()->has('phone_attempt_ids')) {
                 return null;
