@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class SmService extends Model
 {
@@ -19,9 +18,4 @@ class SmService extends Model
         'min',
         'max'
     ];
-
-    public function purchases(): MorphMany
-    {
-        return $this->morphMany(Purchase::class, 'purchasable');
-    }
 }

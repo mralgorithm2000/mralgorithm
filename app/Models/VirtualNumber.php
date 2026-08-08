@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class VirtualNumber extends Model
 {
@@ -19,9 +18,4 @@ class VirtualNumber extends Model
     ];
 
     protected $table = 'virtual_numbers';
-
-    public function purchases(): MorphMany
-    {
-        return $this->morphMany(Purchase::class, 'purchasable');
-    }
 }

@@ -17,6 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class VMOrderController extends Controller
 {
@@ -25,20 +26,15 @@ class VMOrderController extends Controller
         $digiseller = new DigisellerService;
         $verification = $digiseller->verifyPurchase($request->uniquecode);
 
-        if (empty($verification['inv']) && empty(data_get($verification, 'response.inv'))) {
+        if (@$verification['inv'] == '') {
             return response()->json([
                 'success' => false,
                 'message' => __('payment.error'),
             ]);
         }
 
-        $response = $verification['response'] ?? $verification;
-        $invoice = (string) ($response['inv'] ?? $verification['inv']);
-
         $purchase = Purchase::where('unique_code', $request->uniquecode)->first()
-            ?? Purchase::where('marketplace', 'plati')
-                ->where('external_order_id', $invoice)
-                ->first();
+            ?? Purchase::where('plati_order_id', $verification['inv'])->first();
 
         if ($purchase && str_starts_with($purchase->unique_code, 'legacy-')) {
             $purchase->update(['unique_code' => $request->uniquecode]);
@@ -58,16 +54,15 @@ class VMOrderController extends Controller
         }
 
         try {
-            $job = DB::transaction(function () use ($verification, $response, $invoice, $request) {
-                return $this->doTheJob(
-                    $response['id_goods'] ?? $verification['id_goods'],
-                    $response['options'] ?? $verification['options'] ?? [],
-                    $invoice,
-                    $request->uniquecode,
-                );
-            }, 3);
+            $job = $this->doTheJob(
+                $verification['id_goods'],
+                $verification['options'],
+                $verification['inv'],
+                $request->uniquecode,
+                $purchase,
+            );
         } catch (\Exception $e) {
-            Log::info('purchase catch status', [
+            Log::info('puchace ctach status', [
                 'status' => 'error',
                 'body' => $e->getMessage(),
             ]);
@@ -78,6 +73,7 @@ class VMOrderController extends Controller
                 'type' => 'purchase_error',
             ]);
         }
+        // $job = $this->doTheJob($verification['id_goods'], $verification['options'], $verification['inv']);
 
         $this->authorizeAttemptChannel($request, $job['attempt']);
 
@@ -90,68 +86,6 @@ class VMOrderController extends Controller
             'data' => $job['data'],
             'message' => __('payment.success'),
         ]);
-    }
-
-    private function doTheJob($service_id, $options, $invoice_id, string $uniqueCode)
-    {
-        $optionsArr = [];
-
-        foreach ($options as $option) {
-            $optionsArr[$option['id']] = $option['variant_id'] ?? $option['value'];
-        }
-
-        $serviceTypeId = Option::where('plati_id', $service_id)->where('type', 'country')->value('option_id');
-
-        $plati_id = $optionsArr[$serviceTypeId];
-
-        $service = VirtualNumber::where('plati_id', $plati_id)->first();
-
-        $verification = new DigisellerService;
-        $verificationResponse = $verification->verifyPurchase($uniqueCode);
-        $response = $verificationResponse['response'] ?? $verificationResponse;
-
-        $soldPrice = $this->normalizeDecimal($response['amount_usd'] ?? $response['amount'] ?? 0);
-        $profit = $this->normalizeDecimal($response['profit'] ?? 0);
-        $marketplaceFee = max($soldPrice - $profit, 0);
-
-        $purchase = $service->purchases()->firstOrCreate(
-            ['unique_code' => $uniqueCode],
-            [
-                'marketplace' => 'plati',
-                'external_order_id' => $invoice_id,
-                'sold_price' => $soldPrice,
-                'cost_price' => 0,
-                'marketplace_fee' => $marketplaceFee,
-                'refunded_amount' => 0,
-                'status' => PurchaseStatus::PENDING->value,
-            ],
-        );
-
-        $serviceClass = $this->getSourceService($service->source);
-        $serviceInstance = new $serviceClass;
-        $attempt = $serviceInstance->getNumber($service, $purchase);
-
-        $statusDetails = $this->getStatusDetails($attempt->status);
-
-        return [
-            'attempt' => $attempt,
-            'data' => [
-                'number' => $attempt->phone_number,
-                'country_code' => $attempt->country_code,
-                'expires_at' => $this->dateToMinutes($attempt->expires_at),
-                'serviceName' => $this->getServiceDetails($service->type)['name'],
-                'serviceIcon' => $this->getServiceDetails($service->type)['icon'],
-                'status' => $statusDetails['value'],
-                'statusLabel' => $statusDetails['label'],
-                'order_id' => $attempt->id,
-                'sms_code' => '',
-            ],
-        ];
-    }
-
-    private function normalizeDecimal(mixed $value): float
-    {
-        return is_numeric($value) ? (float) $value : 0.0;
     }
 
     public function replacement(Request $request)
