@@ -14,18 +14,22 @@ use App\Services\DigisellerService;
 use App\Services\NumberlandService;
 use App\Services\SmsCodexService;
 use Carbon\Carbon;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Illuminate\Database\UniqueConstraintViolationException;
 
 class VMOrderController extends Controller
 {
     public function verify(Request $request)
     {
+        $validated = $request->validate([
+            'uniquecode' => ['required', 'string', 'max:255'],
+        ]);
+
         $digiseller = new DigisellerService;
-        $verification = $this->verificationData($digiseller->verifyPurchase($request->uniquecode));
+        $verification = $this->verificationData($digiseller->verifyPurchase($validated['uniquecode']));
 
         if (@$verification['inv'] == '') {
             return response()->json([
@@ -34,12 +38,7 @@ class VMOrderController extends Controller
             ]);
         }
 
-        $purchase = Purchase::where('unique_code', $request->uniquecode)->first()
-            ?? Purchase::where('marketplace', 'plati')->where('external_order_id', $verification['inv'])->first();
-
-        if ($purchase && str_starts_with($purchase->unique_code, 'legacy-')) {
-            $purchase->update(['unique_code' => $request->uniquecode]);
-        }
+        $purchase = $this->purchaseQuery($verification['inv'])->first();
 
         if ($purchase && ($attempt = $purchase->activeAttempt())) {
             return $this->attemptResponse($request, $purchase, $attempt);
@@ -59,7 +58,6 @@ class VMOrderController extends Controller
                 $verification['id_goods'],
                 $verification['options'],
                 $verification['inv'],
-                $request->uniquecode,
                 $purchase,
                 $this->purchasePrices($verification),
             );
@@ -97,9 +95,13 @@ class VMOrderController extends Controller
         ]);
 
         try {
-            $result = DB::transaction(function () use ($validated) {
-                $purchase = Purchase::query()
-                    ->where('unique_code', $validated['uniquecode'])
+            $verification = $this->verificationData(
+                (new DigisellerService)->verifyPurchase($validated['uniquecode'])
+            );
+            $invoiceId = $this->invoiceId($verification);
+
+            $result = DB::transaction(function () use ($invoiceId) {
+                $purchase = $this->purchaseQuery($invoiceId)
                     ->lockForUpdate()
                     ->firstOrFail();
 
@@ -163,9 +165,13 @@ class VMOrderController extends Controller
         ]);
 
         try {
-            $result = DB::transaction(function () use ($validated) {
-                $purchase = Purchase::query()
-                    ->where('unique_code', $validated['uniquecode'])
+            $verification = $this->verificationData(
+                (new DigisellerService)->verifyPurchase($validated['uniquecode'])
+            );
+            $invoiceId = $this->invoiceId($verification);
+
+            $result = DB::transaction(function () use ($validated, $invoiceId) {
+                $purchase = $this->purchaseQuery($invoiceId)
                     ->lockForUpdate()
                     ->firstOrFail();
 
@@ -229,7 +235,7 @@ class VMOrderController extends Controller
         ], $result['created'] ? 201 : 200);
     }
 
-    private function doTheJob($service_id, $options, $invoice_id, string $uniqueCode, ?Purchase $purchase, array $prices)
+    private function doTheJob($service_id, $options, $invoice_id, ?Purchase $purchase, array $prices)
     {
         $optionsArr = [];
 
@@ -242,26 +248,25 @@ class VMOrderController extends Controller
         $plati_id = $optionsArr[$serviceTypeId];
 
         $service = VirtualNumber::where('plati_id', $plati_id)->first();
-        $serviceDetails = $this->getServiceDetails($service->type);
 
         if (! $service) {
             throw new \RuntimeException('The purchased virtual-number service was not found.');
         }
+
+        $serviceDetails = $this->getServiceDetails($service->type);
 
         if (! $purchase) {
             try {
                 $purchase = DB::transaction(fn () => $service->purchases()->create([
                     'marketplace' => 'plati',
                     'external_order_id' => (string) $invoice_id,
-                    'unique_code' => $uniqueCode,
                     ...$prices,
                     'status' => PurchaseStatus::PENDING->value,
                 ]), 3);
             } catch (UniqueConstraintViolationException) {
                 $purchase = Purchase::query()
-                    ->where('unique_code', $uniqueCode)
-                    ->orWhere(fn ($query) => $query->where('marketplace', 'plati')
-                        ->where('external_order_id', (string) $invoice_id))
+                    ->where('marketplace', 'plati')
+                    ->where('external_order_id', (string) $invoice_id)
                     ->firstOrFail();
             }
         }
@@ -363,7 +368,6 @@ class VMOrderController extends Controller
             ],
         ];
 
-
         $serviceType = Str::lower(trim((string) $type));
 
         return $serviceMap[$serviceType] ?? [
@@ -387,6 +391,22 @@ class VMOrderController extends Controller
         return isset($verification['response']) && is_array($verification['response'])
             ? array_replace($verification, $verification['response'])
             : $verification;
+    }
+
+    private function invoiceId(array $verification): string
+    {
+        $invoiceId = (string) ($verification['inv'] ?? '');
+
+        abort_if($invoiceId === '', 422, __('payment.error'));
+
+        return $invoiceId;
+    }
+
+    private function purchaseQuery(int|string $invoiceId)
+    {
+        return Purchase::query()
+            ->where('marketplace', 'plati')
+            ->where('external_order_id', (string) $invoiceId);
     }
 
     private function purchasePrices(array $verification): array

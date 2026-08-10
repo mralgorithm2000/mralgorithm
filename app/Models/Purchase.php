@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class Purchase extends Model
 {
     protected $fillable = [
-        'unique_code',
         'marketplace',
         'external_order_id',
         'purchasable_id',

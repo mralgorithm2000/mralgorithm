@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Purchase;
 use App\Models\SmService;
 use App\Models\VirtualNumber;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -25,8 +24,8 @@ class PurchasablePurchaseTest extends TestCase
             'sm' => 'instagram', 'min' => '10', 'max' => '1000',
         ]);
 
-        $virtualPurchase = $virtualNumber->purchases()->create($this->attributes('code-vn', 'inv-vn'));
-        $smPurchase = $smService->purchases()->create($this->attributes('code-sm', 'inv-sm'));
+        $virtualPurchase = $virtualNumber->purchases()->create($this->attributes('inv-vn'));
+        $smPurchase = $smService->purchases()->create($this->attributes('inv-sm'));
 
         $this->assertSame('virtual_number', $virtualPurchase->purchasable_type);
         $this->assertSame('sm_service', $smPurchase->purchasable_type);
@@ -36,31 +35,26 @@ class PurchasablePurchaseTest extends TestCase
         $this->assertSame('0.020000', $virtualPurchase->marketplace_fee);
     }
 
-    public function test_unique_code_and_marketplace_invoice_are_independently_unique(): void
+    public function test_marketplace_invoice_is_unique(): void
     {
         $service = VirtualNumber::create([
             'country' => 'US', 'original_price' => '0.2', 'source' => 'smscodex',
             'type' => 'telegram', 'plati_id' => 'vn-unique',
         ]);
-        $service->purchases()->create($this->attributes('same-code', 'same-invoice'));
+        $service->purchases()->create($this->attributes('same-invoice'));
 
-        foreach ([
-            $this->attributes('same-code', 'other-invoice'),
-            $this->attributes('other-code', 'same-invoice'),
-        ] as $attributes) {
-            try {
-                $service->purchases()->create($attributes);
-                $this->fail('Expected a purchase uniqueness violation.');
-            } catch (UniqueConstraintViolationException) {
-                $this->assertDatabaseCount('purchases', 1);
-            }
+        try {
+            $service->purchases()->create($this->attributes('same-invoice'));
+            $this->fail('Expected a purchase uniqueness violation.');
+        } catch (UniqueConstraintViolationException) {
+            $this->assertDatabaseCount('purchases', 1);
         }
     }
 
-    private function attributes(string $code, string $invoice): array
+    private function attributes(string $invoice): array
     {
         return [
-            'marketplace' => 'plati', 'external_order_id' => $invoice, 'unique_code' => $code,
+            'marketplace' => 'plati', 'external_order_id' => $invoice,
             'sold_price' => 0.33, 'cost_price' => 0, 'marketplace_fee' => 0.02,
             'refunded_amount' => 0, 'status' => 'pending',
         ];

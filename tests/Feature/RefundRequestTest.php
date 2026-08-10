@@ -18,12 +18,12 @@ class RefundRequestTest extends TestCase
     {
         $purchase = $this->purchaseWithAttempt(now()->subMinute());
 
-        $this->postJson('/api/vm/refund-request', ['uniquecode' => $purchase->unique_code])
+        $this->postJson('/api/vm/refund-request', ['uniquecode' => 'test'])
             ->assertCreated()
             ->assertJsonPath('refund_status', 'pending')
             ->assertJsonPath('purchase_status', PurchaseStatus::REFUND_PENDING->value);
 
-        $this->postJson('/api/vm/refund-request', ['uniquecode' => $purchase->unique_code])
+        $this->postJson('/api/vm/refund-request', ['uniquecode' => 'test'])
             ->assertOk()
             ->assertJsonPath('created', false);
 
@@ -38,7 +38,7 @@ class RefundRequestTest extends TestCase
     {
         $purchase = $this->purchaseWithAttempt(now()->addMinute());
 
-        $this->postJson('/api/vm/refund-request', ['uniquecode' => $purchase->unique_code])
+        $this->postJson('/api/vm/refund-request', ['uniquecode' => 'test'])
             ->assertConflict()
             ->assertJsonPath('can_request_refund', false);
 
@@ -49,7 +49,7 @@ class RefundRequestTest extends TestCase
     {
         $purchase = $this->purchaseWithAttempt(now()->subMinute(), '123456');
 
-        $this->postJson('/api/vm/refund-request', ['uniquecode' => $purchase->unique_code])
+        $this->postJson('/api/vm/refund-request', ['uniquecode' => 'test'])
             ->assertConflict();
 
         $this->assertDatabaseCount('refund_requests', 0);
@@ -66,8 +66,7 @@ class RefundRequestTest extends TestCase
         ]);
 
         $purchase = $service->purchases()->create([
-            'unique_code' => 'code-'.uniqid(),
-            'external_order_id' => 'invoice-'.uniqid(),
+            'external_order_id' => '789',
             'marketplace' => 'plati',
             'sold_price' => 1,
         ]);

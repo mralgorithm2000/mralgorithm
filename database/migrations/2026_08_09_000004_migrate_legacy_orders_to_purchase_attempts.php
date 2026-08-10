@@ -16,9 +16,11 @@ return new class extends Migration
             ->orderBy('id')
             ->each(function (object $order): void {
                 $purchaseId = DB::table('purchases')->insertGetId([
-                    'virtual_number_id' => $order->virtual_number_id,
-                    'unique_code' => 'legacy-'.$order->id,
-                    'plati_order_id' => $order->plati_order_id,
+                    'purchasable_id' => $order->virtual_number_id,
+                    'purchasable_type' => 'virtual_number',
+                    'marketplace' => 'plati',
+                    'external_order_id' => $order->plati_order_id,
+                    'status' => 'pending',
                     'created_at' => $order->created_at,
                     'updated_at' => $order->updated_at,
                 ]);

@@ -55,7 +55,7 @@ class SmsCodexSupplierCostTest extends TestCase
         ]);
         $purchase = $service->purchases()->create([
             'marketplace' => 'plati', 'external_order_id' => uniqid('invoice-'),
-            'unique_code' => uniqid('code-'), 'sold_price' => 0.33,
+            'sold_price' => 0.33,
             'marketplace_fee' => 0.02,
         ]);
 

@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Enums\PhoneAttemptStatus;
 use App\Models\PhoneAttempt;
-use App\Models\Purchase;
 use App\Models\VirtualNumber;
 use App\Services\NumberlandService;
 use App\Services\SmsCodeBroadcastService;
@@ -27,7 +26,6 @@ class CheckNumberlandOrderStatusesCommandTest extends TestCase
         ]);
 
         $purchase = $service->purchases()->create([
-            'unique_code' => 'code-1',
             'external_order_id' => 'invoice-1',
             'marketplace' => 'plati',
             'sold_price' => 1,
@@ -77,7 +75,6 @@ class CheckNumberlandOrderStatusesCommandTest extends TestCase
         ]);
 
         $purchase = $service->purchases()->create([
-            'unique_code' => 'code-expired',
             'external_order_id' => 'invoice-expired',
             'marketplace' => 'plati',
             'sold_price' => 1,
