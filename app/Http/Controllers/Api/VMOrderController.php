@@ -44,7 +44,7 @@ class VMOrderController extends Controller
             return $this->attemptResponse($request, $purchase, $attempt);
         }
 
-        if ($purchase) {
+        if ($purchase) {    
             return $this->attemptResponse(
                 $request,
                 $purchase,
