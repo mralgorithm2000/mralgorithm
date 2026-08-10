@@ -84,7 +84,7 @@ class SmsCodexService
 
         // Remove the country code from the beginning of the number.
         if ($countryCode !== '' && str_starts_with($phoneNumber, "+" . $countryCode)) {
-            $phoneNumber = substr($phoneNumber, strlen($countryCode));
+            $phoneNumber = substr($phoneNumber, strlen("+" . $countryCode));
         }
 
         $attempt = $purchase->phoneAttempts()->create([
