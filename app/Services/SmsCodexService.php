@@ -27,6 +27,7 @@ class SmsCodexService
                     'country' => $service->country_id,
                     'operator' => 'any',
                     'price_limit' => (float) $service->original_price,
+                    'provider_id' => '92339993-9b1f-4e64-82fb-9c9f1bf1ec71',
                     'extras' => [
                         'priority' => 'quality',
                     ],
