@@ -17,9 +17,6 @@ return new class extends Migration
             $table->string('marketplace')->default('plati');
             $table->string('external_order_id');
 
-            $table->decimal('sold_price', 18, 6)->default(0);
-            $table->decimal('cost_price', 18, 6)->default(0);
-            $table->decimal('marketplace_fee', 18, 6)->default(0);
             $table->decimal('refunded_amount', 18, 6)->default(0);
 
             $table->string('status')->default('pending');

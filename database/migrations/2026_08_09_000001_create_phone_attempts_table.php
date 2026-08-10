@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('phone_attempts')) {
+            return;
+        }
+
         Schema::create('phone_attempts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('purchase_id')->constrained()->cascadeOnDelete();
@@ -16,6 +20,9 @@ return new class extends Migration
             $table->string('phone_number');
             $table->string('country_code');
             $table->string('sms_code')->nullable();
+            $table->decimal('sold_price', 18, 6)->default(0);
+            $table->decimal('cost_price', 18, 6)->default(0);
+            $table->decimal('marketplace_fee', 18, 6)->default(0);
             $table->enum('status', ['waiting', 'received', 'expired', 'refunded'])->default('waiting');
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
