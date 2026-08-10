@@ -44,7 +44,7 @@ class VMOrderController extends Controller
             return $this->attemptResponse($request, $purchase, $attempt);
         }
 
-        if ($purchase) {    
+        if ($purchase) {
             return $this->attemptResponse(
                 $request,
                 $purchase,
@@ -365,6 +365,10 @@ class VMOrderController extends Controller
             'whatsapp' => [
                 'name' => 'WhatsApp',
                 'icon' => asset('storage/icons/whatsapp.png'),
+            ],
+            'google' => [
+                'name' => 'Google',
+                'icon' => asset('storage/icons/google.png'),
             ],
         ];
 
