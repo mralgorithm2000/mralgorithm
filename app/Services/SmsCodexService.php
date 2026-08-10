@@ -84,8 +84,13 @@ class SmsCodexService
         $phoneNumber = $data['phone_number'];
 
         // Remove the country code from the beginning of the number.
-        if ($countryCode !== '' && str_starts_with($phoneNumber, "+" . $countryCode)) {
-            $phoneNumber = substr($phoneNumber, strlen("+" . $countryCode));
+
+        if ($countryCode !== '') {
+            $phoneNumber = ltrim($phoneNumber, '+');
+
+            if (str_starts_with($phoneNumber, $countryCode)) {
+                $phoneNumber = substr($phoneNumber, strlen($countryCode));
+            }
         }
 
         $actualCost = $data['price'] ?? $data['cost'] ?? $data['amount'] ?? 0;

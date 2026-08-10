@@ -11976,3 +11976,53 @@ Stack trace:
 [stacktrace]
 #0 {main}
 "} 
+[2026-08-10 18:05:33] local.ERROR: Uncaught Error: Call to undefined method Illuminate\Support\Facades\DB::getTable() in Command line code:26
+Stack trace:
+#0 {main}
+  thrown {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Uncaught Error: Call to undefined method Illuminate\\Support\\Facades\\DB::getTable() in Command line code:26
+Stack trace:
+#0 {main}
+  thrown at Command line code:26)
+[stacktrace]
+#0 {main}
+"} 
+[2026-08-10 18:06:07] local.ERROR: Uncaught Error: Call to undefined method Illuminate\Support\Facades\DB::getTable() in Command line code:26
+Stack trace:
+#0 {main}
+  thrown {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Uncaught Error: Call to undefined method Illuminate\\Support\\Facades\\DB::getTable() in Command line code:26
+Stack trace:
+#0 {main}
+  thrown at Command line code:26)
+[stacktrace]
+#0 {main}
+"} 
+[2026-08-10 18:07:12] local.ERROR: Uncaught Error: Call to undefined method Illuminate\Support\Facades\DB::getTable() in Command line code:26
+Stack trace:
+#0 {main}
+  thrown {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Uncaught Error: Call to undefined method Illuminate\\Support\\Facades\\DB::getTable() in Command line code:26
+Stack trace:
+#0 {main}
+  thrown at Command line code:26)
+[stacktrace]
+#0 {main}
+"} 
+[2026-08-10 18:07:26] local.ERROR: Uncaught Error: Call to undefined method Illuminate\Support\Facades\DB::getTable() in Command line code:26
+Stack trace:
+#0 {main}
+  thrown {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Uncaught Error: Call to undefined method Illuminate\\Support\\Facades\\DB::getTable() in Command line code:26
+Stack trace:
+#0 {main}
+  thrown at Command line code:26)
+[stacktrace]
+#0 {main}
+"} 
+[2026-08-10 18:07:27] local.ERROR: Uncaught Error: Call to undefined method Illuminate\Support\Facades\DB::getTable() in Command line code:26
+Stack trace:
+#0 {main}
+  thrown {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Uncaught Error: Call to undefined method Illuminate\\Support\\Facades\\DB::getTable() in Command line code:26
+Stack trace:
+#0 {main}
+  thrown at Command line code:26)
+[stacktrace]
+#0 {main}
+"} 
