@@ -16,11 +16,17 @@ class PhoneAttempt extends Model
         'phone_number',
         'country_code',
         'sms_code',
+        'sold_price',
+        'cost_price',
+        'marketplace_fee',
         'status',
         'expires_at',
     ];
 
     protected $casts = [
+        'sold_price' => 'decimal:6',
+        'cost_price' => 'decimal:6',
+        'marketplace_fee' => 'decimal:6',
         'expires_at' => 'datetime',
     ];
 

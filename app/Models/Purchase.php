@@ -16,9 +16,6 @@ class Purchase extends Model
         'external_order_id',
         'purchasable_id',
         'purchasable_type',
-        'sold_price',
-        'cost_price',
-        'marketplace_fee',
         'refunded_amount',
         'status',
     ];
@@ -26,9 +23,6 @@ class Purchase extends Model
     protected function casts(): array
     {
         return [
-            'sold_price' => 'decimal:6',
-            'cost_price' => 'decimal:6',
-            'marketplace_fee' => 'decimal:6',
             'refunded_amount' => 'decimal:6',
         ];
     }

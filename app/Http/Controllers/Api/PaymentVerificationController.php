@@ -89,17 +89,11 @@ class PaymentVerificationController extends Controller
         $service = SmService::where('plati_id', $plati_id)->firstOrFail();
         $serviceId = $service->api_id;
 
-        $sold = max(0, (float) ($verification['amount_usd'] ?? 0));
-        $profit = max(0, (float) ($verification['profit'] ?? $sold));
-
         try {
-            [$purchase, $order] = DB::transaction(function () use ($service, $invoice_id, $sold, $profit, $link, $quantity, $plati_id, $serviceId) {
+            [$purchase, $order] = DB::transaction(function () use ($service, $invoice_id, $link, $quantity, $plati_id, $serviceId) {
                 $purchase = $service->purchases()->create([
                     'marketplace' => 'plati',
                     'external_order_id' => (string) $invoice_id,
-                    'sold_price' => $sold,
-                    'marketplace_fee' => max(0, $sold - $profit),
-                    'cost_price' => 0,
                     'refunded_amount' => 0,
                     'status' => 'pending',
                 ]);
@@ -155,10 +149,6 @@ class PaymentVerificationController extends Controller
                     'status' => $result['status'],
                 ]);
 
-                $actualCost = $result['charge'] ?? $result['cost'] ?? $result['price'] ?? null;
-                if (is_numeric($actualCost) && (float) $actualCost > 0) {
-                    $purchase->increment('cost_price', (float) $actualCost);
-                }
             } else {
                 Order::where('id', $order->id)->update([
                     'status' => 'failed',

@@ -100,7 +100,9 @@ class VMOrderController extends Controller
             );
             $invoiceId = $this->invoiceId($verification);
 
-            $result = DB::transaction(function () use ($invoiceId) {
+            $prices = $this->purchasePrices($verification);
+
+            $result = DB::transaction(function () use ($invoiceId, $prices) {
                 $purchase = $this->purchaseQuery($invoiceId)
                     ->lockForUpdate()
                     ->firstOrFail();
@@ -131,7 +133,7 @@ class VMOrderController extends Controller
 
                 return [
                     'purchase' => $purchase,
-                    'attempt' => $serviceInstance->getNumber($service, $purchase),
+                    'attempt' => $serviceInstance->getNumber($service, $purchase, $prices),
                     'eligible' => true,
                 ];
             }, 3);
@@ -260,7 +262,6 @@ class VMOrderController extends Controller
                 $purchase = DB::transaction(fn () => $service->purchases()->create([
                     'marketplace' => 'plati',
                     'external_order_id' => (string) $invoice_id,
-                    ...$prices,
                     'status' => PurchaseStatus::PENDING->value,
                 ]), 3);
             } catch (UniqueConstraintViolationException) {
@@ -274,7 +275,7 @@ class VMOrderController extends Controller
         $serviceClass = $this->getSourceService($service->source);
         $serviceInstance = new $serviceClass;
         $attempt = DB::transaction(
-            fn () => $serviceInstance->getNumber($service, $purchase),
+            fn () => $serviceInstance->getNumber($service, $purchase, $prices),
             3,
         );
 
@@ -422,7 +423,6 @@ class VMOrderController extends Controller
         return [
             'sold_price' => $sold,
             'marketplace_fee' => max(0, $sold - $profit),
-            'cost_price' => 0,
             'refunded_amount' => 0,
         ];
     }

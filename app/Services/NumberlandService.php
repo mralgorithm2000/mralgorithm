@@ -16,7 +16,7 @@ class NumberlandService
      *
      * Replace these IDs with the correct values from the getinfo API.
      */
-    public function getNumber(VirtualNumber $service, Purchase $purchase): PhoneAttempt
+    public function getNumber(VirtualNumber $service, Purchase $purchase, array $prices = []): PhoneAttempt
     {
 
         $response = Http::get(
@@ -99,18 +99,18 @@ class NumberlandService
             );
         }
 
+        $actualCost = $data['PRICE'] ?? $data['COST'] ?? 0;
+
         $attempt = $purchase->phoneAttempts()->create([
             'provider_order_id' => $data['ID'],
             'provider' => 'numberland',
             'phone_number' => $phoneNumber,
             'country_code' => '+'.$countryCode,
             'expires_at' => $expiresAt,
+            'sold_price' => $prices['sold_price'] ?? 0,
+            'cost_price' => is_numeric($actualCost) ? max(0, (float) $actualCost) : 0,
+            'marketplace_fee' => $prices['marketplace_fee'] ?? 0,
         ]);
-
-        $actualCost = $data['PRICE'] ?? $data['COST'] ?? null;
-        if (is_numeric($actualCost) && (float) $actualCost > 0) {
-            $purchase->increment('cost_price', (float) $actualCost);
-        }
 
         return $attempt;
     }
