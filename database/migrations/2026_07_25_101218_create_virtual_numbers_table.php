@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('source');
             $table->string('type');
             $table->string('plati_id');
+            $table->string('provider_id');
             $table->timestamps();
         });
     }

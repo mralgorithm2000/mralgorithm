@@ -27,7 +27,7 @@ class SmsCodexService
                     'country' => $service->country_id,
                     'operator' => 'any',
                     'price_limit' => (float) $service->original_price,
-                    'provider_id' => '92339993-9b1f-4e64-82fb-9c9f1bf1ec71',
+                    'provider_id' => $service->provider_id,
                     'extras' => [
                         'priority' => 'quality',
                     ],
@@ -100,6 +100,10 @@ class SmsCodexService
             'cost_price' => is_numeric($actualCost) ? max(0, (float) $actualCost) : 0,
             'marketplace_fee' => $prices['marketplace_fee'] ?? 0,
         ]);
+
+        if (is_numeric($actualCost) && (float) $actualCost > 0) {
+            $purchase->increment('cost_price', (float) $actualCost);
+        }
 
         return $attempt;
     }

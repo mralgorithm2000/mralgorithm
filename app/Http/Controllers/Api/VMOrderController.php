@@ -262,6 +262,7 @@ class VMOrderController extends Controller
                 $purchase = DB::transaction(fn () => $service->purchases()->create([
                     'marketplace' => 'plati',
                     'external_order_id' => (string) $invoice_id,
+                    ...$prices,
                     'status' => PurchaseStatus::PENDING->value,
                 ]), 3);
             } catch (UniqueConstraintViolationException) {
@@ -423,6 +424,7 @@ class VMOrderController extends Controller
         return [
             'sold_price' => $sold,
             'marketplace_fee' => max(0, $sold - $profit),
+            'cost_price' => 0,
             'refunded_amount' => 0,
         ];
     }

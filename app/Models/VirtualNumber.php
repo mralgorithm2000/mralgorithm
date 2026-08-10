@@ -16,6 +16,7 @@ class VirtualNumber extends Model
         'service_id',
         'country_id',
         'country_code',
+        'provider_id'
     ];
 
     protected $table = 'virtual_numbers';

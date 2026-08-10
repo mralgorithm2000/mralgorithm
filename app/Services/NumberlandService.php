@@ -112,6 +112,10 @@ class NumberlandService
             'marketplace_fee' => $prices['marketplace_fee'] ?? 0,
         ]);
 
+        if (is_numeric($actualCost) && (float) $actualCost > 0) {
+            $purchase->increment('cost_price', (float) $actualCost);
+        }
+
         return $attempt;
     }
 
