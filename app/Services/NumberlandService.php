@@ -99,13 +99,20 @@ class NumberlandService
             );
         }
 
-        return $purchase->phoneAttempts()->create([
+        $attempt = $purchase->phoneAttempts()->create([
             'provider_order_id' => $data['ID'],
             'provider' => 'numberland',
             'phone_number' => $phoneNumber,
             'country_code' => '+'.$countryCode,
             'expires_at' => $expiresAt,
         ]);
+
+        $actualCost = $data['PRICE'] ?? $data['COST'] ?? null;
+        if (is_numeric($actualCost) && (float) $actualCost > 0) {
+            $purchase->increment('cost_price', (float) $actualCost);
+        }
+
+        return $attempt;
     }
 
     public function getOrderStatus(string $order_id): array

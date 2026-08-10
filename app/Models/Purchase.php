@@ -5,22 +5,38 @@ namespace App\Models;
 use App\Enums\PhoneAttemptStatus;
 use App\Enums\PurchaseStatus;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Purchase extends Model
 {
     protected $fillable = [
         'unique_code',
-        'plati_order_id',
-        'virtual_number_id',
+        'marketplace',
+        'external_order_id',
+        'purchasable_id',
+        'purchasable_type',
+        'sold_price',
+        'cost_price',
+        'marketplace_fee',
+        'refunded_amount',
         'status',
     ];
 
-    public function virtualNumber(): BelongsTo
+    protected function casts(): array
     {
-        return $this->belongsTo(VirtualNumber::class);
+        return [
+            'sold_price' => 'decimal:6',
+            'cost_price' => 'decimal:6',
+            'marketplace_fee' => 'decimal:6',
+            'refunded_amount' => 'decimal:6',
+        ];
+    }
+
+    public function purchasable(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     public function phoneAttempts(): HasMany

@@ -18,13 +18,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 class VMOrderController extends Controller
 {
     public function verify(Request $request)
     {
         $digiseller = new DigisellerService;
-        $verification = $digiseller->verifyPurchase($request->uniquecode);
+        $verification = $this->verificationData($digiseller->verifyPurchase($request->uniquecode));
 
         if (@$verification['inv'] == '') {
             return response()->json([
@@ -34,7 +35,7 @@ class VMOrderController extends Controller
         }
 
         $purchase = Purchase::where('unique_code', $request->uniquecode)->first()
-            ?? Purchase::where('plati_order_id', $verification['inv'])->first();
+            ?? Purchase::where('marketplace', 'plati')->where('external_order_id', $verification['inv'])->first();
 
         if ($purchase && str_starts_with($purchase->unique_code, 'legacy-')) {
             $purchase->update(['unique_code' => $request->uniquecode]);
@@ -60,6 +61,7 @@ class VMOrderController extends Controller
                 $verification['inv'],
                 $request->uniquecode,
                 $purchase,
+                $this->purchasePrices($verification),
             );
         } catch (\Exception $e) {
             Log::info('puchace ctach status', [
@@ -117,7 +119,11 @@ class VMOrderController extends Controller
                     ];
                 }
 
-                $service = $purchase->virtualNumber;
+                $service = $purchase->purchasable;
+
+                if (! $service instanceof VirtualNumber) {
+                    abort(409, 'This purchase is not a virtual-number purchase.');
+                }
                 $serviceClass = $this->getSourceService($service->source);
                 $serviceInstance = new $serviceClass;
 
@@ -223,7 +229,7 @@ class VMOrderController extends Controller
         ], $result['created'] ? 201 : 200);
     }
 
-    private function doTheJob($service_id, $options, $invoice_id, string $uniqueCode, ?Purchase $purchase)
+    private function doTheJob($service_id, $options, $invoice_id, string $uniqueCode, ?Purchase $purchase, array $prices)
     {
         $optionsArr = [];
 
@@ -238,17 +244,34 @@ class VMOrderController extends Controller
         $service = VirtualNumber::where('plati_id', $plati_id)->first();
         $serviceDetails = $this->getServiceDetails($service->type);
 
-        $purchase ??= Purchase::firstOrCreate(
-            ['unique_code' => $uniqueCode],
-            [
-                'plati_order_id' => $invoice_id,
-                'virtual_number_id' => $service->id,
-            ],
-        );
+        if (! $service) {
+            throw new \RuntimeException('The purchased virtual-number service was not found.');
+        }
+
+        if (! $purchase) {
+            try {
+                $purchase = DB::transaction(fn () => $service->purchases()->create([
+                    'marketplace' => 'plati',
+                    'external_order_id' => (string) $invoice_id,
+                    'unique_code' => $uniqueCode,
+                    ...$prices,
+                    'status' => PurchaseStatus::PENDING->value,
+                ]), 3);
+            } catch (UniqueConstraintViolationException) {
+                $purchase = Purchase::query()
+                    ->where('unique_code', $uniqueCode)
+                    ->orWhere(fn ($query) => $query->where('marketplace', 'plati')
+                        ->where('external_order_id', (string) $invoice_id))
+                    ->firstOrFail();
+            }
+        }
 
         $serviceClass = $this->getSourceService($service->source);
         $serviceInstance = new $serviceClass;
-        $attempt = $serviceInstance->getNumber($service, $purchase);
+        $attempt = DB::transaction(
+            fn () => $serviceInstance->getNumber($service, $purchase),
+            3,
+        );
 
         $statusDetails = $this->getStatusDetails($attempt->status);
 
@@ -283,7 +306,8 @@ class VMOrderController extends Controller
             $this->authorizeAttemptChannel($request, $attempt);
         }
 
-        $serviceDetails = $this->getServiceDetails($purchase->virtualNumber->type);
+        $service = $purchase->purchasable;
+        $serviceDetails = $this->getServiceDetails($service instanceof VirtualNumber ? $service->type : null);
         $statusDetails = $this->getStatusDetails($attempt?->status);
 
         return response()->json([
@@ -356,6 +380,27 @@ class VMOrderController extends Controller
             case 'numberland':
                 return NumberlandService::class;
         }
+    }
+
+    private function verificationData(array $verification): array
+    {
+        return isset($verification['response']) && is_array($verification['response'])
+            ? array_replace($verification, $verification['response'])
+            : $verification;
+    }
+
+    private function purchasePrices(array $verification): array
+    {
+        $sold = max(0, (float) ($verification['amount_usd'] ?? 0));
+        // DigiSeller documents profit as the seller's net proceeds after its fee.
+        $profit = max(0, (float) ($verification['profit'] ?? $sold));
+
+        return [
+            'sold_price' => $sold,
+            'marketplace_fee' => max(0, $sold - $profit),
+            'cost_price' => 0,
+            'refunded_amount' => 0,
+        ];
     }
 
     private function dateToMinutes($date)

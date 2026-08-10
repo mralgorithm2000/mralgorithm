@@ -26,10 +26,11 @@ class CheckNumberlandOrderStatusesCommandTest extends TestCase
             'plati_id' => 'numberland-test',
         ]);
 
-        $purchase = Purchase::create([
-            'virtual_number_id' => $service->id,
+        $purchase = $service->purchases()->create([
             'unique_code' => 'code-1',
-            'plati_order_id' => 'invoice-1',
+            'external_order_id' => 'invoice-1',
+            'marketplace' => 'plati',
+            'sold_price' => 1,
         ]);
         $attempt = PhoneAttempt::create([
             'purchase_id' => $purchase->id,
@@ -75,10 +76,11 @@ class CheckNumberlandOrderStatusesCommandTest extends TestCase
             'plati_id' => 'numberland-expired',
         ]);
 
-        $purchase = Purchase::create([
-            'virtual_number_id' => $service->id,
+        $purchase = $service->purchases()->create([
             'unique_code' => 'code-expired',
-            'plati_order_id' => 'invoice-expired',
+            'external_order_id' => 'invoice-expired',
+            'marketplace' => 'plati',
+            'sold_price' => 1,
         ]);
         PhoneAttempt::create([
             'purchase_id' => $purchase->id,

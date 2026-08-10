@@ -52,6 +52,11 @@ class SmsCodexService
 
         $data = $response->json();
 
+        if (! isset($data['order_id'], $data['phone_number'])) {
+            Log::error('SMSCodex purchase returned no completed order', ['response' => $data]);
+            throw new Exception(__('sms.unable_to_purchase'), 1001);
+        }
+
         $providerExpiresAt = $data['expires_at'] ?? null;
 
         if (! is_string($providerExpiresAt) || trim($providerExpiresAt) === '') {
@@ -82,13 +87,20 @@ class SmsCodexService
             $phoneNumber = substr($phoneNumber, strlen($countryCode));
         }
 
-        return $purchase->phoneAttempts()->create([
+        $attempt = $purchase->phoneAttempts()->create([
             'provider_order_id' => $data['order_id'],
             'provider' => 'smscodex',
             'phone_number' => $phoneNumber,
             'country_code' => '+'.$countryCode,
             'expires_at' => $expiresAt,
         ]);
+
+        $actualCost = $data['price'] ?? $data['cost'] ?? $data['amount'] ?? null;
+        if (is_numeric($actualCost) && (float) $actualCost > 0) {
+            $purchase->increment('cost_price', (float) $actualCost);
+        }
+
+        return $attempt;
     }
 
     public function getOrderStatus(string $order_id): array

@@ -16,5 +16,6 @@ class Order extends Model
         'quantity',
         'error',
         'user_code',
+        'purchase_id',
     ];
 }

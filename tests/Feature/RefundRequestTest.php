@@ -65,10 +65,11 @@ class RefundRequestTest extends TestCase
             'plati_id' => 'refund-'.uniqid(),
         ]);
 
-        $purchase = Purchase::create([
-            'virtual_number_id' => $service->id,
+        $purchase = $service->purchases()->create([
             'unique_code' => 'code-'.uniqid(),
-            'plati_order_id' => 'invoice-'.uniqid(),
+            'external_order_id' => 'invoice-'.uniqid(),
+            'marketplace' => 'plati',
+            'sold_price' => 1,
         ]);
 
         PhoneAttempt::create([
