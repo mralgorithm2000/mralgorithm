@@ -36,7 +36,7 @@ class PaymentVerificationController extends Controller
 
         $existing = Purchase::query()
             ->where('marketplace', 'plati')
-            ->where('external_order_id', $invoiceId)
+            ->where('external_order_id', $uniqueCode)
             ->first();
 
         if ($existing) {
@@ -72,7 +72,7 @@ class PaymentVerificationController extends Controller
         ]);
     }
 
-    private function doTheJob($service_id, $quantity, $options, $invoice_id, array $verification)
+    private function doTheJob($service_id, $quantity, $options, $invoice_id, array $verification, $uniqueCode)
     {
         $optionsArr = [];
 
@@ -93,10 +93,10 @@ class PaymentVerificationController extends Controller
         $profit = max(0, (float) ($verification['profit'] ?? $sold));
 
         try {
-            [$purchase, $order] = DB::transaction(function () use ($service, $invoice_id, $sold, $profit, $link, $quantity, $plati_id, $serviceId) {
+            [$purchase, $order] = DB::transaction(function () use ($service, $uniqueCode, $sold, $profit, $link, $quantity, $plati_id, $serviceId) {
                 $purchase = $service->purchases()->create([
                     'marketplace' => 'plati',
-                    'external_order_id' => (string) $invoice_id,
+                    'external_order_id' => (string) $uniqueCode,
                     'sold_price' => $sold,
                     'cost_price' => 0,
                     'marketplace_fee' => max(0, $sold - $profit),
@@ -119,7 +119,7 @@ class PaymentVerificationController extends Controller
         } catch (UniqueConstraintViolationException) {
             $purchase = Purchase::query()
                 ->where('marketplace', 'plati')
-                ->where('external_order_id', (string) $invoice_id)
+                ->where('external_order_id', (string) $uniqueCode)
                 ->firstOrFail();
             $order = Order::where('purchase_id', $purchase->id)->firstOrFail();
         }

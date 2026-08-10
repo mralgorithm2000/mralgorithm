@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Enums\PhoneAttemptStatus;
-use App\Enums\PurchaseStatus;
 use App\Models\PhoneAttempt;
 use App\Services\NumberlandService;
 use App\Services\SmsCodeBroadcastService;
@@ -51,22 +50,9 @@ class CheckNumberlandOrderStatuses extends Command
                         return;
                     }
 
-                    $updated = PhoneAttempt::query()
-                        ->whereKey($attempt->getKey())
-                        ->where('status', PhoneAttemptStatus::WAITING->value)
-                        ->whereNull('sms_code')
-                        ->update([
-                            'sms_code' => (string) $smsCode,
-                            'status' => PhoneAttemptStatus::RECEIVED->value,
-                        ]);
-
-                    if (! $updated) {
+                    if (! $numberlandService->receiveSmsCode($attempt, (string) $smsCode)) {
                         return;
                     }
-
-                    $attempt->purchase()->update([
-                        'status' => PurchaseStatus::COMPLETED->value,
-                    ]);
 
                     $receivedCount++;
                     $smsCodeBroadcastService->broadcast($attempt->id, (string) $smsCode);

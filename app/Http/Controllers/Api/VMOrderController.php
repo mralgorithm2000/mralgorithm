@@ -38,7 +38,7 @@ class VMOrderController extends Controller
             ]);
         }
 
-        $purchase = $this->purchaseQuery($verification['inv'])->first();
+        $purchase = $this->purchaseQuery($validated['uniquecode'])->first();
 
         if ($purchase && ($attempt = $purchase->activeAttempt())) {
             return $this->attemptResponse($request, $purchase, $attempt);
@@ -58,6 +58,7 @@ class VMOrderController extends Controller
                 $verification['id_goods'],
                 $verification['options'],
                 $verification['inv'],
+                $validated['uniquecode'],
                 $purchase,
                 $this->purchasePrices($verification),
             );
@@ -86,77 +87,6 @@ class VMOrderController extends Controller
             'data' => $job['data'],
             'message' => __('payment.success'),
         ]);
-    }
-
-    public function replacement(Request $request)
-    {
-        $validated = $request->validate([
-            'uniquecode' => ['required', 'string', 'max:255'],
-        ]);
-
-        try {
-            $verification = $this->verificationData(
-                (new DigisellerService)->verifyPurchase($validated['uniquecode'])
-            );
-            $invoiceId = $this->invoiceId($verification);
-
-            $prices = $this->purchasePrices($verification);
-
-            $result = DB::transaction(function () use ($invoiceId, $prices) {
-                $purchase = $this->purchaseQuery($invoiceId)
-                    ->lockForUpdate()
-                    ->firstOrFail();
-
-                if (! $purchase->allowsReplacement()) {
-                    return [
-                        'purchase' => $purchase,
-                        'attempt' => null,
-                        'eligible' => false,
-                    ];
-                }
-
-                if ($attempt = $purchase->unexpiredAttempt()) {
-                    return [
-                        'purchase' => $purchase,
-                        'attempt' => $attempt,
-                        'eligible' => true,
-                    ];
-                }
-
-                $service = $purchase->purchasable;
-
-                if (! $service instanceof VirtualNumber) {
-                    abort(409, 'This purchase is not a virtual-number purchase.');
-                }
-                $serviceClass = $this->getSourceService($service->source);
-                $serviceInstance = new $serviceClass;
-
-                return [
-                    'purchase' => $purchase,
-                    'attempt' => $serviceInstance->getNumber($service, $purchase, $prices),
-                    'eligible' => true,
-                ];
-            }, 3);
-        } catch (\Exception $exception) {
-            Log::error('Replacement number purchase failed', [
-                'exception' => $exception->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => __('sms.unable_to_purchase'),
-            ], 422);
-        }
-
-        if (! $result['eligible']) {
-            return response()->json([
-                'success' => false,
-                'can_order_replacement' => false,
-                'message' => __('sms.unable_to_purchase'),
-            ], 409);
-        }
-
-        return $this->attemptResponse($request, $result['purchase'], $result['attempt']);
     }
 
     public function requestRefund(Request $request)
@@ -237,7 +167,7 @@ class VMOrderController extends Controller
         ], $result['created'] ? 201 : 200);
     }
 
-    private function doTheJob($service_id, $options, $invoice_id, ?Purchase $purchase, array $prices)
+    private function doTheJob($service_id, $options, $invoice_id, string $uniqueCode, ?Purchase $purchase, array $prices)
     {
         $optionsArr = [];
 
@@ -261,14 +191,14 @@ class VMOrderController extends Controller
             try {
                 $purchase = DB::transaction(fn () => $service->purchases()->create([
                     'marketplace' => 'plati',
-                    'external_order_id' => (string) $invoice_id,
+                    'external_order_id' => (string) $uniqueCode,
                     ...$prices,
                     'status' => PurchaseStatus::PENDING->value,
                 ]), 3);
             } catch (UniqueConstraintViolationException) {
                 $purchase = Purchase::query()
                     ->where('marketplace', 'plati')
-                    ->where('external_order_id', (string) $invoice_id)
+                    ->where('external_order_id', (string) $uniqueCode)
                     ->firstOrFail();
             }
         }
@@ -408,11 +338,11 @@ class VMOrderController extends Controller
         return $invoiceId;
     }
 
-    private function purchaseQuery(int|string $invoiceId)
+    private function purchaseQuery(int|string $uniquecode)
     {
         return Purchase::query()
             ->where('marketplace', 'plati')
-            ->where('external_order_id', (string) $invoiceId);
+            ->where('external_order_id', (string) $uniquecode);
     }
 
     private function purchasePrices(array $verification): array

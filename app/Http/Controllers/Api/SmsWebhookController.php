@@ -77,7 +77,7 @@ class SmsWebhookController extends Controller
             ->where('provider', 'smscodex')
             ->firstOrFail();
 
-        $attempt->receiveCode($smsCode);
+        $service->receiveSmsCode($attempt, (string) $smsCode);
 
         // Send to frontend via Pusher
         $smsCodeBroadcastService->broadcast($attempt->id, $smsCode);

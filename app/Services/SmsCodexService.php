@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\PhoneAttempt;
 use App\Models\Purchase;
 use App\Models\VirtualNumber;
+use App\Enums\PhoneAttemptStatus;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Http;
@@ -12,6 +13,27 @@ use Illuminate\Support\Facades\Log;
 
 class SmsCodexService
 {
+    public function receiveSmsCode(PhoneAttempt $attempt, string $smsCode): bool
+    {
+        if ($attempt->status === PhoneAttemptStatus::RECEIVED->value) {
+            return false;
+        }
+
+        $purchase = $attempt->purchase;
+
+        if ($purchase->marketplace === 'plati' && $purchase->external_order_id) {
+            (new DigisellerService)->markAsDelivered($purchase->external_order_id);
+        } elseif ($purchase->marketplace === 'plati') {
+            Log::warning('DigiSeller delivery skipped because the unique code is missing', [
+                'purchase_id' => $purchase->id,
+            ]);
+        }
+
+        $attempt->receiveCode($smsCode);
+
+        return true;
+    }
+
     /**
      * SMSCodex country ID => international dialing code.
      */
