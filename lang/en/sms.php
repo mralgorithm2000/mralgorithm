@@ -97,4 +97,6 @@ return [
     'replacement_order_failed' => 'We could not order another number from our provider. Please try again.',
 
     'replacement_ordered' => 'Your new phone number is ready.',
+
+    'refund_request_received_message' => 'We received your refund request 🙌 Our team will review it shortly and process your refund as soon as possible.',
 ];

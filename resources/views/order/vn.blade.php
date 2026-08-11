@@ -336,7 +336,7 @@
             justify-content: center;
         }
 
-        .cancellation-message {
+        .activity-message {
             display: none;
             max-width: 310px;
             color: var(--text);
@@ -841,8 +841,12 @@
                             </div>
                         </div>
 
-                        <div class="cancellation-message" id="cancellationMessage">
+                        <div class="activity-message" id="cancellationMessage">
                             @lang('sms.cancellation_complete_message')
+                        </div>
+
+                        <div class="activity-message" id="refundRequestMessage">
+                            @lang('sms.refund_request_received_message')
                         </div>
                     </div>
                 </div>
@@ -941,9 +945,7 @@
                         return;
                     }
 
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('smsCode').style.display = 'block';
-                    document.getElementById('cancellationMessage').style.display = 'none';
+                    showActivityState('received');
                     document.getElementById('code').innerText = event.sms_code;
                     document.getElementById('ding').play().catch(() => {});
                     document.getElementById('statusLabel').innerText = @json(__('sms.status_received'));
@@ -963,9 +965,7 @@
 
                     showToast(@json(__('sms.number_canceled')));
                     document.getElementById('timer').innerText = '00:00';
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('smsCode').style.display = 'none';
-                    document.getElementById('cancellationMessage').style.display = 'block';
+                    showActivityState('cancelled');
                     showStatusActions('cancelled', false);
                     showReplacementButton(Boolean(event.can_order_replacement));
                     showRefundButton(Boolean(event.can_request_refund));
@@ -988,6 +988,13 @@
 
         function showRefundButton(show) {
             document.getElementById('refundAction').style.display = show ? 'block' : 'none';
+        }
+
+        function showActivityState(state) {
+            document.getElementById('loading').style.display = state === 'waiting' ? 'block' : 'none';
+            document.getElementById('smsCode').style.display = state === 'received' ? 'block' : 'none';
+            document.getElementById('cancellationMessage').style.display = state === 'cancelled' ? 'block' : 'none';
+            document.getElementById('refundRequestMessage').style.display = state === 'refund_pending' ? 'block' : 'none';
         }
 
         function showStatusActions(status, hasCode) {
@@ -1024,13 +1031,14 @@
             }
 
             const hasCode = data.sms_code !== '' && data.sms_code !== null && data.sms_code !== undefined;
-            document.getElementById('loading').style.display = hasCode ? 'none' : 'block';
-            document.getElementById('smsCode').style.display = hasCode ? 'block' : 'none';
-            document.getElementById('cancellationMessage').style.display = 'none';
             document.getElementById('code').innerText = data.sms_code || '';
 
             const allowedStatuses = ['waiting', 'received', 'completed', 'expired', 'cancelled', 'refunded'];
             const status = allowedStatuses.includes(data.status) ? data.status : 'waiting';
+            const activityState = hasCode
+                ? 'received'
+                : (purchaseStatus === 'refund_pending' ? 'refund_pending' : status);
+            showActivityState(activityState);
             document.getElementById('statusBadge').dataset.status = status;
             document.getElementById('statusLabel').innerText = data.statusLabel || '';
             showStatusActions(status, hasCode);
@@ -1038,6 +1046,9 @@
             if (purchaseStatus === 'refund_pending') {
                 document.getElementById('statusBadge').dataset.status = 'refund_pending';
                 document.getElementById('statusLabel').innerText = @json(__('sms.status_refund_pending'));
+                document.getElementById('expiredNotice').style.display = 'none';
+            } else if (status === 'cancelled') {
+                document.getElementById('statusLabel').innerText = @json(__('sms.status_cancelled'));
             }
 
             if (attemptTimer) {
@@ -1046,7 +1057,9 @@
             }
 
             const timer = document.getElementById('timer');
-            let total = Math.max(0, Number(data.expires_at) || 0);
+            let total = status === 'cancelled' || purchaseStatus === 'refund_pending'
+                ? 0
+                : Math.max(0, Number(data.expires_at) || 0);
             const actionsAllowedWhenTimerEnds = purchaseStatus === 'pending' && status === 'waiting' && !hasCode;
             showReplacementButton(Boolean(canOrderReplacement));
             showRefundButton(Boolean(canRequestRefund));
@@ -1284,8 +1297,17 @@
                 if (response.ok && data.success) {
                     showRefundButton(false);
                     showReplacementButton(false);
+                    showActivityState('refund_pending');
+                    document.getElementById('timer').innerText = '00:00';
+                    document.getElementById('expiredNotice').style.display = 'none';
                     document.getElementById('statusBadge').dataset.status = 'refund_pending';
                     document.getElementById('statusLabel').innerText = @json(__('sms.status_refund_pending'));
+
+                    if (attemptTimer) {
+                        clearInterval(attemptTimer);
+                        attemptTimer = null;
+                    }
+
                     return;
                 }
 
