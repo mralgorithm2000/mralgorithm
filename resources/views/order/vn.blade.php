@@ -329,7 +329,6 @@
 
         .sms-code {
             width: 100%;
-            display: none;
         }
 
         .sms-code .label {
@@ -337,7 +336,6 @@
         }
 
         .activity-message {
-            display: none;
             max-width: 310px;
             color: var(--text);
             font-size: 15px;
@@ -830,7 +828,7 @@
                             <p>@lang('sms.waiting_description')</p>
                         </div>
 
-                        <div class="sms-code" id="smsCode">
+                        <div class="sms-code" id="smsCode" hidden>
                             <div class="label">@lang('sms.received_code')</div>
                             <div class="sms-value-box">
                                 <div class="sms-value" id="code"></div>
@@ -841,11 +839,11 @@
                             </div>
                         </div>
 
-                        <div class="activity-message" id="cancellationMessage">
+                        <div class="activity-message" id="cancellationMessage" hidden>
                             @lang('sms.cancellation_complete_message')
                         </div>
 
-                        <div class="activity-message" id="refundRequestMessage">
+                        <div class="activity-message" id="refundRequestMessage" hidden>
                             @lang('sms.refund_request_received_message')
                         </div>
                     </div>
@@ -991,10 +989,10 @@
         }
 
         function showActivityState(state) {
-            document.getElementById('loading').style.display = state === 'waiting' ? 'block' : 'none';
-            document.getElementById('smsCode').style.display = state === 'received' ? 'block' : 'none';
-            document.getElementById('cancellationMessage').style.display = state === 'cancelled' ? 'block' : 'none';
-            document.getElementById('refundRequestMessage').style.display = state === 'refund_pending' ? 'block' : 'none';
+            document.getElementById('loading').hidden = state !== 'waiting';
+            document.getElementById('smsCode').hidden = state !== 'received';
+            document.getElementById('cancellationMessage').hidden = state !== 'cancelled';
+            document.getElementById('refundRequestMessage').hidden = state !== 'refund_pending';
         }
 
         function showStatusActions(status, hasCode) {
@@ -1012,6 +1010,8 @@
             canRequestRefund = false,
             purchaseStatus = 'pending'
         ) {
+            const normalizedPurchaseStatus = String(purchaseStatus || 'pending').trim().toLowerCase();
+
             if (data.order_id && Number(data.order_id) !== Number(subscribedAttemptId)) {
                 subscribeToSmsCode(data.order_id);
                 subscribedAttemptId = data.order_id;
@@ -1037,13 +1037,13 @@
             const status = allowedStatuses.includes(data.status) ? data.status : 'waiting';
             const activityState = hasCode
                 ? 'received'
-                : (purchaseStatus === 'refund_pending' ? 'refund_pending' : status);
+                : (normalizedPurchaseStatus === 'refund_pending' ? 'refund_pending' : status);
             showActivityState(activityState);
             document.getElementById('statusBadge').dataset.status = status;
             document.getElementById('statusLabel').innerText = data.statusLabel || '';
             showStatusActions(status, hasCode);
 
-            if (purchaseStatus === 'refund_pending') {
+            if (normalizedPurchaseStatus === 'refund_pending') {
                 document.getElementById('statusBadge').dataset.status = 'refund_pending';
                 document.getElementById('statusLabel').innerText = @json(__('sms.status_refund_pending'));
                 document.getElementById('expiredNotice').style.display = 'none';
@@ -1057,10 +1057,10 @@
             }
 
             const timer = document.getElementById('timer');
-            let total = status === 'cancelled' || purchaseStatus === 'refund_pending'
+            let total = status === 'cancelled' || normalizedPurchaseStatus === 'refund_pending'
                 ? 0
                 : Math.max(0, Number(data.expires_at) || 0);
-            const actionsAllowedWhenTimerEnds = purchaseStatus === 'pending' && status === 'waiting' && !hasCode;
+            const actionsAllowedWhenTimerEnds = normalizedPurchaseStatus === 'pending' && status === 'waiting' && !hasCode;
             showReplacementButton(Boolean(canOrderReplacement));
             showRefundButton(Boolean(canRequestRefund));
 
