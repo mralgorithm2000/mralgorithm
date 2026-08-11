@@ -67,4 +67,12 @@ return [
     'status_refund_pending' => 'Refund Pending',
 
     'number_canceled' => 'The phone number was canceled.',
+
+    'no_active_number_to_cancel' => 'There is no active phone number to cancel.',
+
+    'number_cannot_be_canceled' => 'This phone number cannot be canceled through SMSCodex.',
+
+    'cancellation_request_failed' => 'The provider could not accept the cancellation request. Please try again.',
+
+    'cancellation_request_sent' => 'We sent the cancellation request to our provider.',
 ];

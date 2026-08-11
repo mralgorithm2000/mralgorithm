@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\PhoneAttemptStatus;
+use App\Events\PhoneNumberCancelled;
 use App\Http\Controllers\Controller;
 use App\Models\PhoneAttempt;
 use App\Services\SmsCodeBroadcastService;
@@ -21,14 +23,13 @@ class SmsWebhookController extends Controller
         ]);
 
         $payload = $request->input('payload');
+        $payload = is_array($payload) ? $payload : $request->all();
+        $stage = strtolower((string) ($payload['stage'] ?? ''));
 
-        if (
-            ! $payload ||
-            ($payload['stage'] ?? null) !== 'completed'
-        ) {
+        if (! in_array($stage, ['completed', 'cancelled'], true)) {
             Log::info('sms codex status webhook', [
                 'status' => 'Ignored',
-                'stage' => $payload['stage'] ?? null,
+                'stage' => $stage ?: null,
             ]);
 
             return response()->json([
@@ -48,6 +49,30 @@ class SmsWebhookController extends Controller
                 'success' => false,
                 'message' => 'Missing order_id',
             ], 400);
+        }
+
+        if ($stage === 'cancelled') {
+            $attempt = PhoneAttempt::query()
+                ->where('provider_order_id', $orderId)
+                ->where('provider', 'smscodex')
+                ->firstOrFail();
+
+            $updated = PhoneAttempt::query()
+                ->whereKey($attempt->id)
+                ->where('status', PhoneAttemptStatus::WAITING->value)
+                ->update(['status' => PhoneAttemptStatus::EXPIRED->value]);
+
+            if ($updated > 0) {
+                $purchase = $attempt->purchase()->firstOrFail();
+
+                PhoneNumberCancelled::dispatch(
+                    $attempt->id,
+                    $purchase->canOrderReplacement(),
+                    $purchase->canRequestRefund(),
+                );
+            }
+
+            return response()->json(['success' => true]);
         }
 
         $service = new SmsCodexService;

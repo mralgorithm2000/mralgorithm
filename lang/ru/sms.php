@@ -67,4 +67,12 @@ return [
     'status_refund_pending' => 'Возврат ожидается',
 
     'number_canceled' => 'Номер телефона был отменен.',
+
+    'no_active_number_to_cancel' => 'Нет активного номера телефона, который можно отменить.',
+
+    'number_cannot_be_canceled' => 'Этот номер нельзя отменить через SMSCodex.',
+
+    'cancellation_request_failed' => 'Поставщик не смог принять запрос на отмену. Пожалуйста, попробуйте еще раз.',
+
+    'cancellation_request_sent' => 'Мы отправили запрос на отмену нашему поставщику.',
 ];

@@ -381,8 +381,21 @@
         }
 
         .replacement-btn:disabled {
-            cursor: wait;
+            cursor: not-allowed;
             opacity: .65;
+        }
+
+        .replacement-btn.is-loading {
+            cursor: wait;
+        }
+
+        .replacement-btn .button-spinner {
+            display: none;
+            margin-right: 7px;
+        }
+
+        .replacement-btn.is-loading .button-spinner {
+            display: inline-block;
         }
 
         .refund-btn {
@@ -793,6 +806,7 @@
 
                 <div class="replacement-action" id="cancellationAction">
                     <button class="replacement-btn refund-btn" id="cancelNumber" type="button">
+                        <i class="fa-solid fa-circle-notch fa-spin button-spinner" aria-hidden="true"></i>
                         @lang('sms.cancel_number')
                     </button>
                 </div>
@@ -875,6 +889,23 @@
 
                     if (attemptTimer) {
                         clearInterval(attemptTimer);
+                    }
+                })
+                .listen('.phone.number.cancelled', (event) => {
+                    if (Number(event.order_id) !== Number(orderId)) {
+                        return;
+                    }
+
+                    showToast(@json(__('sms.number_canceled')));
+                    showStatusActions('expired', false);
+                    showReplacementButton(Boolean(event.can_order_replacement));
+                    showRefundButton(Boolean(event.can_request_refund));
+                    document.getElementById('statusBadge').dataset.status = 'expired';
+                    document.getElementById('statusLabel').innerText = @json(__('sms.status_expired'));
+
+                    if (attemptTimer) {
+                        clearInterval(attemptTimer);
+                        attemptTimer = null;
                     }
                 });
         }
@@ -1210,6 +1241,8 @@
             }
 
             button.disabled = true;
+            button.classList.add('is-loading');
+            let cancellationRequested = false;
 
             try {
                 const response = await fetch('{{ url('/api/vm/cancel-number') }}', {
@@ -1229,18 +1262,8 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    showToast(@json(__('sms.number_canceled')));
-                    showStatusActions('expired', false);
-                    showReplacementButton(Boolean(data.can_order_replacement));
-                    showRefundButton(Boolean(data.can_request_refund));
-                    document.getElementById('statusBadge').dataset.status = data.status || 'expired';
-                    document.getElementById('statusLabel').innerText = data.status_label || @json(__('sms.status_expired'));
-
-                    if (attemptTimer) {
-                        clearInterval(attemptTimer);
-                        attemptTimer = null;
-                    }
-
+                    cancellationRequested = true;
+                    showToast(data.message || @json(__('sms.cancellation_request_sent')));
                     return;
                 }
 
@@ -1249,7 +1272,8 @@
                 console.error('Cancellation API Error:', error);
                 window.alert(genericVerificationError);
             } finally {
-                button.disabled = false;
+                button.classList.remove('is-loading');
+                button.disabled = cancellationRequested;
             }
         }
 

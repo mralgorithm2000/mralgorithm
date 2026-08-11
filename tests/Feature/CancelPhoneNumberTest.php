@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Enums\PhoneAttemptStatus;
 use App\Models\PhoneAttempt;
-use App\Models\Purchase;
 use App\Models\VirtualNumber;
 use App\Services\SmsCodexService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,7 +13,7 @@ class CancelPhoneNumberTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_a_waiting_smscodex_number_can_be_canceled(): void
+    public function test_a_waiting_smscodex_cancellation_request_is_sent_without_expiring_the_attempt(): void
     {
         [$purchase, $attempt] = $this->waitingAttempt();
 
@@ -22,23 +21,21 @@ class CancelPhoneNumberTest extends TestCase
             $mock->shouldReceive('cancelOrder')
                 ->once()
                 ->with($attempt->provider_order_id)
-                ->andReturn(['order_status' => SmsCodexService::ORDER_STATUS_CANCELED]);
+                ->andReturn(['success' => true]);
         });
 
         $this->postJson('/api/vm/cancel-number', ['uniqueCode' => $purchase->external_order_id])
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('status', PhoneAttemptStatus::EXPIRED->value)
-            ->assertJsonPath('can_order_replacement', true)
-            ->assertJsonPath('can_request_refund', true);
+            ->assertJsonPath('message', __('sms.cancellation_request_sent'));
 
         $this->assertDatabaseHas('phone_attempts', [
             'id' => $attempt->id,
-            'status' => PhoneAttemptStatus::EXPIRED->value,
+            'status' => PhoneAttemptStatus::WAITING->value,
         ]);
     }
 
-    public function test_attempt_stays_waiting_when_smscodex_does_not_confirm_cancellation(): void
+    public function test_attempt_stays_waiting_when_smscodex_accepts_cancellation_asynchronously(): void
     {
         [$purchase, $attempt] = $this->waitingAttempt();
 
@@ -49,8 +46,8 @@ class CancelPhoneNumberTest extends TestCase
         });
 
         $this->postJson('/api/vm/cancel-number', ['uniqueCode' => $purchase->external_order_id])
-            ->assertConflict()
-            ->assertJsonPath('success', false);
+            ->assertOk()
+            ->assertJsonPath('success', true);
 
         $this->assertSame(PhoneAttemptStatus::WAITING->value, $attempt->fresh()->status);
     }
