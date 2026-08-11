@@ -75,4 +75,6 @@ return [
     'cancellation_request_failed' => 'The provider could not accept the cancellation request. Please try again.',
 
     'cancellation_request_sent' => 'We sent the cancellation request to our provider.',
+
+    'cancellation_complete_message' => 'All set! 👋 This number has been canceled. You can choose another number or request a refund below.',
 ];

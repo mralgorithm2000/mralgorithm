@@ -335,6 +335,15 @@
             justify-content: center;
         }
 
+        .cancellation-message {
+            display: none;
+            max-width: 310px;
+            color: var(--text);
+            font-size: 15px;
+            font-weight: 650;
+            line-height: 1.6;
+        }
+
         .sms-value-box {
             display: flex;
             align-items: center;
@@ -407,14 +416,47 @@
             top: 20px;
             right: 20px;
             z-index: 10000;
-            display: none;
-            padding: 12px 17px;
-            border-radius: 12px;
-            color: #fff;
-            background: var(--green);
+            display: flex;
+            width: min(390px, calc(100% - 40px));
+            align-items: flex-start;
+            gap: 11px;
+            padding: 13px 15px;
+            border: 1px solid #cde8dc;
+            border-radius: 14px;
+            color: #306c59;
+            background: #f3fbf7;
             box-shadow: 0 10px 25px rgba(48, 89, 76, .18);
             font-size: 14px;
             font-weight: 600;
+            line-height: 1.45;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity .2s ease, transform .2s ease, visibility .2s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .toast[data-type="error"] {
+            border-color: #efcdd3;
+            color: #8f4652;
+            background: #fff5f6;
+            box-shadow: 0 10px 25px rgba(125, 55, 67, .14);
+        }
+
+        .toast-icon {
+            margin-top: 2px;
+            flex: 0 0 auto;
+            font-size: 16px;
+        }
+
+        .toast-message {
+            min-width: 0;
+            overflow-wrap: anywhere;
         }
 
         #verifyScreen {
@@ -628,6 +670,7 @@
                 top: 12px;
                 right: 12px;
                 left: 12px;
+                width: auto;
                 text-align: center;
             }
         }
@@ -796,6 +839,10 @@
                                 </button>
                             </div>
                         </div>
+
+                        <div class="cancellation-message" id="cancellationMessage">
+                            @lang('sms.cancellation_complete_message')
+                        </div>
                     </div>
                 </div>
 
@@ -835,8 +882,9 @@
         </section>
     </main>
 
-    <div class="toast" id="toast" role="status">
-        @lang('sms.copied')
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true">
+        <i class="fa-solid fa-circle-check toast-icon" id="toastIcon" aria-hidden="true"></i>
+        <span class="toast-message" id="toastMessage">@lang('sms.copied')</span>
     </div>
 
     <audio id="ding">
@@ -852,14 +900,29 @@
             showToast(@json(__('sms.copied')));
         }
 
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.innerText = message;
-            toast.style.display = 'block';
+        let toastTimer = null;
 
-            setTimeout(() => {
-                toast.style.display = 'none';
-            }, 1800);
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+
+            document.getElementById('toastMessage').textContent = message;
+            toast.dataset.type = type;
+            toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+            toastIcon.className = type === 'error'
+                ? 'fa-solid fa-circle-exclamation toast-icon'
+                : 'fa-solid fa-circle-check toast-icon';
+
+            if (toastTimer) {
+                clearTimeout(toastTimer);
+            }
+
+            requestAnimationFrame(() => toast.classList.add('show'));
+
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('show');
+                toastTimer = null;
+            }, type === 'error' ? 4500 : 2400);
         }
 
         function subscribeToSmsCode(orderId) {
@@ -879,6 +942,7 @@
 
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('smsCode').style.display = 'block';
+                    document.getElementById('cancellationMessage').style.display = 'none';
                     document.getElementById('code').innerText = event.sms_code;
                     document.getElementById('ding').play().catch(() => {});
                     document.getElementById('statusLabel').innerText = @json(__('sms.status_received'));
@@ -897,6 +961,10 @@
                     }
 
                     showToast(@json(__('sms.number_canceled')));
+                    document.getElementById('timer').innerText = '00:00';
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('smsCode').style.display = 'none';
+                    document.getElementById('cancellationMessage').style.display = 'block';
                     showStatusActions('expired', false);
                     showReplacementButton(Boolean(event.can_order_replacement));
                     showRefundButton(Boolean(event.can_request_refund));
@@ -957,6 +1025,7 @@
             const hasCode = data.sms_code !== '' && data.sms_code !== null && data.sms_code !== undefined;
             document.getElementById('loading').style.display = hasCode ? 'none' : 'block';
             document.getElementById('smsCode').style.display = hasCode ? 'block' : 'none';
+            document.getElementById('cancellationMessage').style.display = 'none';
             document.getElementById('code').innerText = data.sms_code || '';
 
             const allowedStatuses = ['waiting', 'received', 'completed', 'expired', 'refunded'];
@@ -1175,10 +1244,10 @@
                     showReplacementButton(false);
                 }
 
-                window.alert(data.message || genericVerificationError);
+                showToast(data.message || genericVerificationError, 'error');
             } catch (error) {
                 console.error('Replacement API Error:', error);
-                window.alert(genericVerificationError);
+                showToast(genericVerificationError, 'error');
             } finally {
                 button.disabled = false;
             }
@@ -1223,10 +1292,10 @@
                     showRefundButton(false);
                 }
 
-                window.alert(data.message || genericVerificationError);
+                showToast(data.message || genericVerificationError, 'error');
             } catch (error) {
                 console.error('Refund Request API Error:', error);
-                window.alert(genericVerificationError);
+                showToast(genericVerificationError, 'error');
             } finally {
                 button.disabled = false;
             }
@@ -1267,10 +1336,10 @@
                     return;
                 }
 
-                window.alert(data.message || genericVerificationError);
+                showToast(data.message || genericVerificationError, 'error');
             } catch (error) {
                 console.error('Cancellation API Error:', error);
-                window.alert(genericVerificationError);
+                showToast(genericVerificationError, 'error');
             } finally {
                 button.classList.remove('is-loading');
                 button.disabled = cancellationRequested;
