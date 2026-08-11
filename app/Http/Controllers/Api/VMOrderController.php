@@ -103,7 +103,7 @@ class VMOrderController extends Controller
             $invoiceId = $this->invoiceId($verification);
 
             $result = DB::transaction(function () use ($validated, $invoiceId) {
-                $purchase = $this->purchaseQuery($invoiceId)
+                $purchase = $this->purchaseQuery($validated['uniquecode'])
                     ->lockForUpdate()
                     ->firstOrFail();
 
