@@ -44,13 +44,21 @@ class VMOrderController extends Controller
             return $this->attemptResponse($request, $purchase, $attempt);
         }
 
-        if ($purchase) {
+        if ($purchase && ($attempt = $purchase->latestAttempt())) {
             return $this->attemptResponse(
                 $request,
                 $purchase,
-                $purchase->latestAttempt(),
+                $attempt,
                 $purchase->canOrderReplacement(),
             );
+        }
+
+        if ($purchase && $purchase->status !== PurchaseStatus::PENDING->value) {
+            return response()->json([
+                'success' => false,
+                'message' => __('sms.incomplete_purchase_cannot_retry'),
+                'type' => 'purchase_error',
+            ], 409);
         }
 
         try {
@@ -376,10 +384,17 @@ class VMOrderController extends Controller
 
         $serviceClass = $this->getSourceService($service->source);
         $serviceInstance = new $serviceClass;
-        $attempt = DB::transaction(
-            fn () => $serviceInstance->getNumber($service, $purchase, $prices),
-            3,
-        );
+        $attempt = DB::transaction(function () use ($serviceInstance, $service, $purchase, $prices) {
+            $lockedPurchase = Purchase::query()
+                ->lockForUpdate()
+                ->findOrFail($purchase->id);
+
+            if ($existingAttempt = $lockedPurchase->latestAttempt()) {
+                return $existingAttempt;
+            }
+
+            return $serviceInstance->getNumber($service, $lockedPurchase, $prices);
+        }, 3);
 
         $statusDetails = $this->getStatusDetails($attempt->status);
 

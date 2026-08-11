@@ -99,4 +99,6 @@ return [
     'replacement_ordered' => 'Your new phone number is ready.',
 
     'refund_request_received_message' => 'We received your refund request 🙌 Our team will review it shortly and process your refund as soon as possible.',
+
+    'incomplete_purchase_cannot_retry' => 'This purchase can no longer request a phone number.',
 ];
