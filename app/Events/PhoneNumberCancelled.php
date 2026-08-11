@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Enums\PhoneAttemptStatus;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -31,7 +32,7 @@ class PhoneNumberCancelled implements ShouldBroadcastNow
     {
         return [
             'order_id' => $this->attemptId,
-            'status' => 'expired',
+            'status' => PhoneAttemptStatus::CANCELLED->value,
             'message' => __('sms.number_canceled'),
             'can_order_replacement' => $this->canOrderReplacement,
             'can_request_refund' => $this->canRequestRefund,

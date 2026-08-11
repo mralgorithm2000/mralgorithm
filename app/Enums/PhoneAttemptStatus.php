@@ -7,6 +7,7 @@ enum PhoneAttemptStatus: string
     case WAITING = 'waiting';
     case RECEIVED = 'received';
     case EXPIRED = 'expired';
+    case CANCELLED = 'cancelled';
     case REFUNDED = 'refunded';
 
     public function label(): string
@@ -15,6 +16,7 @@ enum PhoneAttemptStatus: string
             self::WAITING => 'Waiting',
             self::RECEIVED => 'Received',
             self::EXPIRED => 'Expired',
+            self::CANCELLED => 'Cancelled',
             self::REFUNDED => 'Refunded',
         };
     }

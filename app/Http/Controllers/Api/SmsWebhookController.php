@@ -60,7 +60,7 @@ class SmsWebhookController extends Controller
             $updated = PhoneAttempt::query()
                 ->whereKey($attempt->id)
                 ->where('status', PhoneAttemptStatus::WAITING->value)
-                ->update(['status' => PhoneAttemptStatus::EXPIRED->value]);
+                ->update(['status' => PhoneAttemptStatus::CANCELLED->value]);
 
             if ($updated > 0) {
                 $purchase = $attempt->purchase()->firstOrFail();

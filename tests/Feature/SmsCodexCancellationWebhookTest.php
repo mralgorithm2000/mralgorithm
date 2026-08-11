@@ -14,7 +14,7 @@ class SmsCodexCancellationWebhookTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_cancelled_webhook_expires_attempt_and_broadcasts_to_frontend(): void
+    public function test_cancelled_webhook_cancels_attempt_and_broadcasts_to_frontend(): void
     {
         Event::fake([PhoneNumberCancelled::class]);
 
@@ -52,7 +52,7 @@ class SmsCodexCancellationWebhookTest extends TestCase
             ],
         ])->assertOk()->assertJsonPath('success', true);
 
-        $this->assertSame(PhoneAttemptStatus::EXPIRED->value, $attempt->fresh()->status);
+        $this->assertSame(PhoneAttemptStatus::CANCELLED->value, $attempt->fresh()->status);
 
         Event::assertDispatched(
             PhoneNumberCancelled::class,

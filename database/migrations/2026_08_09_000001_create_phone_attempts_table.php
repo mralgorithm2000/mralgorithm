@@ -23,7 +23,7 @@ return new class extends Migration
             $table->decimal('sold_price', 18, 6)->default(0);
             $table->decimal('cost_price', 18, 6)->default(0);
             $table->decimal('marketplace_fee', 18, 6)->default(0);
-            $table->enum('status', ['waiting', 'received', 'expired', 'refunded'])->default('waiting');
+            $table->enum('status', ['waiting', 'received', 'expired', 'cancelled', 'refunded'])->default('waiting');
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
             $table->index(['provider', 'provider_order_id']);

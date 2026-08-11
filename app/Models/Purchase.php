@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PhoneAttemptStatus;
 use App\Enums\PurchaseStatus;
+use App\Enums\RefundRequestStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -96,7 +97,8 @@ class Purchase extends Model
     public function canOrderReplacement(): bool
     {
         return $this->allowsReplacement()
-            && $this->unexpiredAttempt() === null;
+            && $this->unexpiredAttempt() === null
+            && ! $this->hasActiveRefundRequest();
     }
 
     public function allowsReplacement(): bool
@@ -112,5 +114,15 @@ class Purchase extends Model
             && ! $this->hasReceivedCode()
             && $this->unexpiredAttempt() === null
             && ! $this->refundRequest()->exists();
+    }
+
+    public function hasActiveRefundRequest(): bool
+    {
+        return $this->refundRequest()
+            ->whereIn('status', [
+                RefundRequestStatus::PENDING->value,
+                RefundRequestStatus::APPROVED->value,
+            ])
+            ->exists();
     }
 }

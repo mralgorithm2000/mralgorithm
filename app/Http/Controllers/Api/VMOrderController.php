@@ -102,7 +102,7 @@ class VMOrderController extends Controller
             );
             $invoiceId = $this->invoiceId($verification);
 
-            $result = DB::transaction(function () use ($validated, $invoiceId) {
+            $result = DB::transaction(function () use ($validated) {
                 $purchase = $this->purchaseQuery($validated['uniquecode'])
                     ->lockForUpdate()
                     ->firstOrFail();
@@ -214,6 +214,128 @@ class VMOrderController extends Controller
             'success' => true,
             'message' => __('sms.cancellation_request_sent'),
         ]);
+    }
+
+    public function replacement(Request $request)
+    {
+        $validated = $request->validate([
+            'uniquecode' => ['required', 'string', 'max:255'],
+        ]);
+
+        $purchase = $this->purchaseQuery($validated['uniquecode'])->first();
+
+        if (! $purchase) {
+            return response()->json([
+                'success' => false,
+                'message' => __('sms.replacement_purchase_not_found'),
+            ], 404);
+        }
+
+        if (
+            $purchase->status === PurchaseStatus::REFUNDED->value
+            || $purchase->phoneAttempts()->where('status', PhoneAttemptStatus::REFUNDED->value)->exists()
+            || $purchase->refundRequest()->where('status', RefundRequestStatus::COMPLETED->value)->exists()
+        ) {
+            return response()->json([
+                'success' => false,
+                'can_order_replacement' => false,
+                'message' => __('sms.replacement_purchase_refunded'),
+            ], 409);
+        }
+
+        if ($purchase->hasActiveRefundRequest() || $purchase->status === PurchaseStatus::REFUND_PENDING->value) {
+            return response()->json([
+                'success' => false,
+                'can_order_replacement' => false,
+                'message' => __('sms.replacement_refund_active'),
+            ], 409);
+        }
+
+        if ($purchase->hasReceivedCode()) {
+            return response()->json([
+                'success' => false,
+                'can_order_replacement' => false,
+                'message' => __('sms.replacement_code_received'),
+            ], 409);
+        }
+
+        if ($purchase->unexpiredAttempt()) {
+            return response()->json([
+                'success' => false,
+                'can_order_replacement' => false,
+                'message' => __('sms.replacement_active_attempt'),
+            ], 409);
+        }
+
+        if ($purchase->status !== PurchaseStatus::PENDING->value) {
+            return response()->json([
+                'success' => false,
+                'can_order_replacement' => false,
+                'message' => __('sms.replacement_not_available'),
+            ], 409);
+        }
+
+        try {
+            $attempt = DB::transaction(function () use ($purchase) {
+                $lockedPurchase = Purchase::query()->lockForUpdate()->findOrFail($purchase->id);
+
+                if (! $lockedPurchase->canOrderReplacement()) {
+                    throw new \RuntimeException(__('sms.replacement_state_changed'), 409);
+                }
+
+                $service = $lockedPurchase->purchasable;
+
+                if (! $service instanceof VirtualNumber) {
+                    throw new \RuntimeException(__('sms.replacement_not_available'), 409);
+                }
+
+                $serviceClass = $this->getSourceService($service->source);
+
+                if (! $serviceClass) {
+                    throw new \RuntimeException(__('sms.replacement_not_available'), 409);
+                }
+
+                return app($serviceClass)->getNumber($service, $lockedPurchase);
+            }, 3);
+        } catch (\Throwable $exception) {
+            Log::error('Replacement phone number order failed', [
+                'purchase_id' => $purchase->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            $isConflict = $exception->getCode() === 409;
+
+            return response()->json([
+                'success' => false,
+                'can_order_replacement' => $isConflict ? false : $purchase->fresh()->canOrderReplacement(),
+                'message' => $isConflict ? $exception->getMessage() : __('sms.replacement_order_failed'),
+            ], $isConflict ? 409 : 502);
+        }
+
+        $purchase->refresh();
+        $this->authorizeAttemptChannel($request, $attempt);
+        $serviceDetails = $this->getServiceDetails($purchase->purchasable?->type);
+        $statusDetails = $this->getStatusDetails($attempt->status);
+
+        return response()->json([
+            'success' => true,
+            'can_order_replacement' => false,
+            'can_request_refund' => false,
+            'purchase_status' => $purchase->status,
+            'refund_status' => null,
+            'data' => [
+                'number' => $attempt->phone_number,
+                'country_code' => $attempt->country_code,
+                'expires_at' => $this->dateToMinutes($attempt->expires_at),
+                'serviceName' => $serviceDetails['name'],
+                'serviceIcon' => $serviceDetails['icon'],
+                'status' => $statusDetails['value'],
+                'statusLabel' => $statusDetails['label'],
+                'order_id' => $attempt->id,
+                'sms_code' => '',
+            ],
+            'message' => __('sms.replacement_ordered'),
+        ], 201);
     }
 
     private function doTheJob($service_id, $options, $invoice_id, string $uniqueCode, ?Purchase $purchase, array $prices)

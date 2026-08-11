@@ -137,7 +137,8 @@
             background: var(--green-soft);
         }
 
-        .status-badge[data-status="expired"] {
+        .status-badge[data-status="expired"],
+        .status-badge[data-status="cancelled"] {
             color: var(--red);
             background: var(--red-soft);
         }
@@ -965,11 +966,11 @@
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('smsCode').style.display = 'none';
                     document.getElementById('cancellationMessage').style.display = 'block';
-                    showStatusActions('expired', false);
+                    showStatusActions('cancelled', false);
                     showReplacementButton(Boolean(event.can_order_replacement));
                     showRefundButton(Boolean(event.can_request_refund));
-                    document.getElementById('statusBadge').dataset.status = 'expired';
-                    document.getElementById('statusLabel').innerText = @json(__('sms.status_expired'));
+                    document.getElementById('statusBadge').dataset.status = 'cancelled';
+                    document.getElementById('statusLabel').innerText = @json(__('sms.status_cancelled'));
 
                     if (attemptTimer) {
                         clearInterval(attemptTimer);
@@ -1028,7 +1029,7 @@
             document.getElementById('cancellationMessage').style.display = 'none';
             document.getElementById('code').innerText = data.sms_code || '';
 
-            const allowedStatuses = ['waiting', 'received', 'completed', 'expired', 'refunded'];
+            const allowedStatuses = ['waiting', 'received', 'completed', 'expired', 'cancelled', 'refunded'];
             const status = allowedStatuses.includes(data.status) ? data.status : 'waiting';
             document.getElementById('statusBadge').dataset.status = status;
             document.getElementById('statusLabel').innerText = data.statusLabel || '';

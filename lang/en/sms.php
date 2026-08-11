@@ -64,6 +64,8 @@ return [
 
     'status_expired' => 'Expired',
 
+    'status_cancelled' => 'Cancelled',
+
     'status_refund_pending' => 'Refund Pending',
 
     'number_canceled' => 'The phone number was canceled.',
@@ -77,4 +79,22 @@ return [
     'cancellation_request_sent' => 'We sent the cancellation request to our provider.',
 
     'cancellation_complete_message' => 'All set! 👋 This number has been canceled. You can choose another number or request a refund below.',
+
+    'replacement_purchase_not_found' => 'We could not find this purchase.',
+
+    'replacement_active_attempt' => 'You already have an active phone number. Please wait for it to finish before requesting another one.',
+
+    'replacement_code_received' => 'A verification code has already been received for this purchase, so another number cannot be ordered.',
+
+    'replacement_purchase_refunded' => 'This purchase has already been refunded, so another number cannot be ordered.',
+
+    'replacement_refund_active' => 'A refund request is already being processed for this purchase.',
+
+    'replacement_not_available' => 'Another number is not available for this purchase.',
+
+    'replacement_state_changed' => 'The purchase status changed before another number could be ordered. Please refresh and try again.',
+
+    'replacement_order_failed' => 'We could not order another number from our provider. Please try again.',
+
+    'replacement_ordered' => 'Your new phone number is ready.',
 ];

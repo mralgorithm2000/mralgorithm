@@ -33,6 +33,9 @@ Route::post('vm/verify', [VMOrderController::class, 'verify'])
 Route::post('vm/refund-request', [VMOrderController::class, 'requestRefund'])
     ->middleware(['web', 'throttle:6,1']);
 
+Route::post('vm/replacement', [VMOrderController::class, 'replacement'])
+    ->middleware(['web', 'throttle:6,1']);
+
 Route::post('vm/cancel-number', [VMOrderController::class, 'cancelNumber'])
     ->middleware(['web', 'throttle:6,1']);
 

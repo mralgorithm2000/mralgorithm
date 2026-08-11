@@ -50,6 +50,11 @@ class PhoneAttempt extends Model
         return $this->status === PhoneAttemptStatus::EXPIRED->value;
     }
 
+    public function isCancelled(): bool
+    {
+        return $this->status === PhoneAttemptStatus::CANCELLED->value;
+    }
+
     public function receiveCode(string $code): void
     {
         $this->update([
