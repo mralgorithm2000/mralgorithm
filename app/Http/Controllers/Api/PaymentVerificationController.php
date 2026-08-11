@@ -55,15 +55,26 @@ class PaymentVerificationController extends Controller
             ]);
         }
 
-        $job = $this->doTheJob(
-            $verification['id_goods'],
-            $verification['cnt_goods'],
-            $verification['options'],
-            $verification['inv'],
-            $verification,
-            $validated['uniquecode']
-        );
+        try {
+            $job = $this->doTheJob(
+                $verification['id_goods'],
+                $verification['cnt_goods'],
+                $verification['options'],
+                $verification['inv'],
+                $verification,
+                $validated['uniquecode']
+            );
+        } catch (\Exception $e) {
+            Log::error('Error processing payment verification', [
+                'exception' => $e,
+                'verification' => $verification,
+            ]);
 
+            return response()->json([
+                'success' => false,
+                'message' => __('payment.error_automatic'),
+            ], 500);
+        }
         $digiseller->markAsDelivered($uniqueCode);
 
         return response()->json([
@@ -87,30 +98,6 @@ class PaymentVerificationController extends Controller
         $plati_id = $serviceTypeId !== null
             ? ($optionsArr[$serviceTypeId] ?? null)
             : null;
-
-        Log::info('SMM service lookup diagnostics', [
-            'digiseller_goods_id' => $service_id,
-            'service_type_option_id' => $serviceTypeId,
-            'link_option_id' => $serviceLinkId,
-            'received_option_ids' => array_keys($optionsArr),
-            'selected_service_plati_id' => $plati_id,
-            'selected_service_plati_id_type' => get_debug_type($plati_id),
-        ]);
-
-        if ($plati_id === null || ! SmService::where('plati_id', $plati_id)->exists()) {
-            Log::error('SMM service lookup failed', [
-                'digiseller_goods_id' => $service_id,
-                'service_type_option_id' => $serviceTypeId,
-                'received_option_ids' => array_keys($optionsArr),
-                'selected_service_plati_id' => $plati_id,
-                'sm_services_count' => SmService::count(),
-                'available_sm_service_plati_ids' => SmService::query()
-                    ->orderBy('id')
-                    ->limit(100)
-                    ->pluck('plati_id')
-                    ->all(),
-            ]);
-        }
 
         $service = SmService::where('plati_id', $plati_id)->firstOrFail();
         $serviceId = $service->api_id;
