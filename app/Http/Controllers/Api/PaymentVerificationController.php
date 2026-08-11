@@ -84,11 +84,38 @@ class PaymentVerificationController extends Controller
         $serviceTypeId = Option::where('plati_id', $service_id)->where('type', 'service_type')->value('option_id');
         $serviceLinkId = Option::where('plati_id', $service_id)->where('type', 'link')->value('option_id');
 
-        $link = $optionsArr[$serviceLinkId];
-        $plati_id = $optionsArr[$serviceTypeId];
+        $plati_id = $serviceTypeId !== null
+            ? ($optionsArr[$serviceTypeId] ?? null)
+            : null;
+
+        Log::info('SMM service lookup diagnostics', [
+            'digiseller_goods_id' => $service_id,
+            'service_type_option_id' => $serviceTypeId,
+            'link_option_id' => $serviceLinkId,
+            'received_option_ids' => array_keys($optionsArr),
+            'selected_service_plati_id' => $plati_id,
+            'selected_service_plati_id_type' => get_debug_type($plati_id),
+        ]);
+
+        if ($plati_id === null || ! SmService::where('plati_id', $plati_id)->exists()) {
+            Log::error('SMM service lookup failed', [
+                'digiseller_goods_id' => $service_id,
+                'service_type_option_id' => $serviceTypeId,
+                'received_option_ids' => array_keys($optionsArr),
+                'selected_service_plati_id' => $plati_id,
+                'sm_services_count' => SmService::count(),
+                'available_sm_service_plati_ids' => SmService::query()
+                    ->orderBy('id')
+                    ->limit(100)
+                    ->pluck('plati_id')
+                    ->all(),
+            ]);
+        }
 
         $service = SmService::where('plati_id', $plati_id)->firstOrFail();
         $serviceId = $service->api_id;
+
+        $link = $optionsArr[$serviceLinkId];
 
         $sold = max(0, (float) ($verification['amount_usd'] ?? 0));
         $profit = max(0, (float) ($verification['profit'] ?? $sold));
