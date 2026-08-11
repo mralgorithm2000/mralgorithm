@@ -749,7 +749,7 @@
                     <div class="info-card">
                         <div class="label">
                             <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
-                            Service
+                            @lang('sms.service')
                         </div>
                         <div class="service-row">
                             <img class="service-icon" id="serviceIcon" alt="" hidden>
@@ -787,38 +787,34 @@
                 </div>
 
                 <div class="notice" id="waitingCancellationNotice" style="display:none">
-                    <p>We will send a cancellation request to our provider. For security reasons, this may take up to
-                        3 minutes. If the SMS code has already been received during this time, the provider may still
-                        send it here. If no code was received, the number will be canceled. You can then order a new
-                        number and request a refund.</p>
+                    <b>@lang('sms.cancel_number_question')</b>
+                    <p>@lang('sms.cancel_number_description')</p>
                 </div>
 
                 <div class="replacement-action" id="cancellationAction">
                     <button class="replacement-btn refund-btn" id="cancelNumber" type="button">
-                        Cancel This Number
+                        @lang('sms.cancel_number')
                     </button>
                 </div>
 
                 <div class="notice" id="expiredNotice" style="display:none">
-                    <strong>Didn't receive an SMS code?</strong>
-                    <p>If the timer expires without receiving an SMS, two buttons will appear:</p>
+                    <strong>@lang('sms.sms_not_received')</strong>
+                    <p>@lang('sms.expired_actions_description')</p>
                     <ul>
-                        <li><strong>Get Another Number</strong> – Receive a new virtual number instantly.</li>
-                        <li><strong>Request Refund</strong> – Send a refund request directly to our team. If no SMS code
-                            was received for any number assigned to this purchase, your refund will be reviewed and
-                            processed within <strong>10 hours</strong>.</li>
+                        <li><strong>@lang('sms.get_another_number')</strong> – @lang('sms.get_another_number_description')</li>
+                        <li><strong>@lang('sms.request_refund')</strong> – @lang('sms.request_refund_description')</li>
                     </ul>
                 </div>
 
                 <div class="replacement-action" id="replacementAction">
                     <button class="replacement-btn" id="getAnotherNumber" type="button">
-                        Get Another Number
+                        @lang('sms.get_another_number')
                     </button>
                 </div>
 
                 <div class="replacement-action" id="refundAction">
                     <button class="replacement-btn refund-btn" id="requestRefund" type="button">
-                        Request Refund
+                        @lang('sms.request_refund')
                     </button>
                 </div>
             </div>
@@ -871,7 +867,7 @@
                     document.getElementById('smsCode').style.display = 'block';
                     document.getElementById('code').innerText = event.sms_code;
                     document.getElementById('ding').play().catch(() => {});
-                    document.getElementById('statusLabel').innerText = "Received";
+                    document.getElementById('statusLabel').innerText = @json(__('sms.status_received'));
                     document.getElementById('statusBadge').dataset.status = 'received';
                     document.getElementById('replacementAction').style.display = 'none';
                     document.getElementById('refundAction').style.display = 'none';
@@ -940,7 +936,7 @@
 
             if (purchaseStatus === 'refund_pending') {
                 document.getElementById('statusBadge').dataset.status = 'refund_pending';
-                document.getElementById('statusLabel').innerText = 'Refund Pending';
+                document.getElementById('statusLabel').innerText = @json(__('sms.status_refund_pending'));
             }
 
             if (attemptTimer) {
@@ -973,7 +969,7 @@
                         clearInterval(attemptTimer);
                         attemptTimer = null;
                         document.getElementById('statusBadge').dataset.status = 'expired';
-                        document.getElementById('statusLabel').innerText = 'Expired';
+                        document.getElementById('statusLabel').innerText = @json(__('sms.status_expired'));
                         showStatusActions('expired', false);
                         showReplacementButton(actionsAllowedWhenTimerEnds);
                         showRefundButton(actionsAllowedWhenTimerEnds);
@@ -1188,7 +1184,7 @@
                     showRefundButton(false);
                     showReplacementButton(false);
                     document.getElementById('statusBadge').dataset.status = 'refund_pending';
-                    document.getElementById('statusLabel').innerText = 'Refund Pending';
+                    document.getElementById('statusLabel').innerText = @json(__('sms.status_refund_pending'));
                     return;
                 }
 
@@ -1233,12 +1229,12 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    showToast('The phone number was canceled.');
+                    showToast(@json(__('sms.number_canceled')));
                     showStatusActions('expired', false);
                     showReplacementButton(Boolean(data.can_order_replacement));
                     showRefundButton(Boolean(data.can_request_refund));
                     document.getElementById('statusBadge').dataset.status = data.status || 'expired';
-                    document.getElementById('statusLabel').innerText = data.status_label || 'Expired';
+                    document.getElementById('statusLabel').innerText = data.status_label || @json(__('sms.status_expired'));
 
                     if (attemptTimer) {
                         clearInterval(attemptTimer);
