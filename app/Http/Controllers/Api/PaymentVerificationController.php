@@ -61,6 +61,7 @@ class PaymentVerificationController extends Controller
             $verification['options'],
             $verification['inv'],
             $verification,
+            $validated['uniquecode']
         );
 
         $digiseller->markAsDelivered($uniqueCode);
@@ -93,7 +94,7 @@ class PaymentVerificationController extends Controller
         $profit = max(0, (float) ($verification['profit'] ?? $sold));
 
         try {
-            [$purchase, $order] = DB::transaction(function () use ($service, $uniqueCode, $sold, $profit, $link, $quantity, $plati_id, $serviceId) {
+            [$purchase, $order] = DB::transaction(function () use ($service, $invoice_id, $uniqueCode, $sold, $profit, $link, $quantity, $plati_id, $serviceId) {
                 $purchase = $service->purchases()->create([
                     'marketplace' => 'plati',
                     'external_order_id' => (string) $uniqueCode,
