@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 
 class SmsCodexService
 {
+    public const ORDER_STATUS_CANCELED = 'canceled';
+
     public function receiveSmsCode(PhoneAttempt $attempt, string $smsCode): bool
     {
         if ($attempt->status === PhoneAttemptStatus::RECEIVED->value) {
@@ -154,6 +156,27 @@ class SmsCodexService
                 __('sms.unable_to_check_status'),
                 1002
             );
+        }
+
+        return $response->json();
+    }
+
+    public function cancelOrder(string $orderId): array
+    {
+        $response = Http::withToken(config('services.smscodex.api_key'))
+            ->withHeader('X-API-Key', config('services.smscodex.api_key'))
+            ->post(
+                config('services.smscodex.base_url').'/api/v1/marketplace/orders/'.$orderId.'/cancel'
+            );
+
+        if (! $response->successful()) {
+            Log::error('SMSCodex order cancellation failed', [
+                'status' => $response->status(),
+                'order_id' => $orderId,
+                'body' => $response->body(),
+            ]);
+
+            throw new Exception(__('sms.unable_to_purchase'), 1003);
         }
 
         return $response->json();

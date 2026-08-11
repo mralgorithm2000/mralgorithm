@@ -46,6 +46,19 @@ class SmsCodexSupplierCostTest extends TestCase
         }
     }
 
+    public function test_cancel_order_posts_to_the_smscodex_cancellation_endpoint(): void
+    {
+        Http::fake([
+            '*' => Http::response(['order_status' => SmsCodexService::ORDER_STATUS_CANCELED]),
+        ]);
+
+        $response = app(SmsCodexService::class)->cancelOrder('provider-123');
+
+        $this->assertSame(SmsCodexService::ORDER_STATUS_CANCELED, $response['order_status']);
+        Http::assertSent(fn ($request) => $request->method() === 'POST'
+            && str_ends_with($request->url(), '/api/v1/marketplace/orders/provider-123/cancel'));
+    }
+
     private function purchase(): array
     {
         $service = VirtualNumber::create([

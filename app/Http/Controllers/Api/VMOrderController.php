@@ -167,6 +167,87 @@ class VMOrderController extends Controller
         ], $result['created'] ? 201 : 200);
     }
 
+    public function cancelNumber(Request $request, SmsCodexService $smsCodex)
+    {
+        $request->merge([
+            'uniqueCode' => $request->input('uniqueCode', $request->input('uniquecode')),
+        ]);
+
+        $validated = $request->validate([
+            'uniqueCode' => ['required', 'string', 'max:255'],
+        ]);
+
+        $purchase = $this->purchaseQuery($validated['uniqueCode'])->first();
+        $attempt = $purchase?->activeAttempt();
+
+        if (! $purchase || ! $attempt || ! $attempt->isWaiting()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'There is no active phone number to cancel.',
+            ], 409);
+        }
+
+        if ($attempt->provider !== 'smscodex' || ! $attempt->provider_order_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This phone number cannot be canceled through SMSCodex.',
+            ], 422);
+        }
+
+        try {
+            $providerResponse = $smsCodex->cancelOrder($attempt->provider_order_id);
+        } catch (\Throwable $exception) {
+            Log::error('Phone number cancellation failed', [
+                'purchase_id' => $purchase->id,
+                'phone_attempt_id' => $attempt->id,
+                'provider_order_id' => $attempt->provider_order_id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'The provider could not cancel the phone number. Please try again.',
+            ], 502);
+        }
+
+        if (Str::lower((string) ($providerResponse['order_status'] ?? '')) !== SmsCodexService::ORDER_STATUS_CANCELED) {
+            Log::warning('SMSCodex did not confirm phone number cancellation', [
+                'purchase_id' => $purchase->id,
+                'phone_attempt_id' => $attempt->id,
+                'provider_order_id' => $attempt->provider_order_id,
+                'order_status' => $providerResponse['order_status'] ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'The provider did not confirm the cancellation. Please try again.',
+            ], 409);
+        }
+
+        $updated = PhoneAttempt::query()
+            ->whereKey($attempt->id)
+            ->where('status', PhoneAttemptStatus::WAITING->value)
+            ->update(['status' => PhoneAttemptStatus::EXPIRED->value]);
+
+        if ($updated === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The phone number status changed before it could be canceled.',
+            ], 409);
+        }
+
+        $purchase->refresh();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'The phone number was canceled successfully.',
+            'status' => PhoneAttemptStatus::EXPIRED->value,
+            'status_label' => PhoneAttemptStatus::EXPIRED->label(),
+            'can_order_replacement' => $purchase->canOrderReplacement(),
+            'can_request_refund' => $purchase->canRequestRefund(),
+        ]);
+    }
+
     private function doTheJob($service_id, $options, $invoice_id, string $uniqueCode, ?Purchase $purchase, array $prices)
     {
         $optionsArr = [];

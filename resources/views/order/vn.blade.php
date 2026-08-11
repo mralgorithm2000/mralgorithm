@@ -786,7 +786,20 @@
                     </div>
                 </div>
 
-                <div class="notice">
+                <div class="notice" id="waitingCancellationNotice" style="display:none">
+                    <p>We will send a cancellation request to our provider. For security reasons, this may take up to
+                        3 minutes. If the SMS code has already been received during this time, the provider may still
+                        send it here. If no code was received, the number will be canceled. You can then order a new
+                        number and request a refund.</p>
+                </div>
+
+                <div class="replacement-action" id="cancellationAction">
+                    <button class="replacement-btn refund-btn" id="cancelNumber" type="button">
+                        Cancel This Number
+                    </button>
+                </div>
+
+                <div class="notice" id="expiredNotice" style="display:none">
                     <strong>Didn't receive an SMS code?</strong>
                     <p>If the timer expires without receiving an SMS, two buttons will appear:</p>
                     <ul>
@@ -826,7 +839,12 @@
                 document.getElementById(id).innerText
             );
 
-            let toast = document.getElementById('toast');
+            showToast(@json(__('sms.copied')));
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
             toast.style.display = 'block';
 
             setTimeout(() => {
@@ -857,6 +875,7 @@
                     document.getElementById('statusBadge').dataset.status = 'received';
                     document.getElementById('replacementAction').style.display = 'none';
                     document.getElementById('refundAction').style.display = 'none';
+                    showStatusActions('received', true);
 
                     if (attemptTimer) {
                         clearInterval(attemptTimer);
@@ -873,6 +892,15 @@
 
         function showRefundButton(show) {
             document.getElementById('refundAction').style.display = show ? 'block' : 'none';
+        }
+
+        function showStatusActions(status, hasCode) {
+            const isWaiting = status === 'waiting' && !hasCode;
+            const isCompleted = status === 'completed' || status === 'received' || hasCode;
+
+            document.getElementById('waitingCancellationNotice').style.display = isWaiting ? 'block' : 'none';
+            document.getElementById('cancellationAction').style.display = isWaiting ? 'block' : 'none';
+            document.getElementById('expiredNotice').style.display = !isWaiting && !isCompleted ? 'block' : 'none';
         }
 
         function displayAttempt(
@@ -904,10 +932,11 @@
             document.getElementById('smsCode').style.display = hasCode ? 'block' : 'none';
             document.getElementById('code').innerText = data.sms_code || '';
 
-            const allowedStatuses = ['waiting', 'received', 'expired', 'refunded'];
+            const allowedStatuses = ['waiting', 'received', 'completed', 'expired', 'refunded'];
             const status = allowedStatuses.includes(data.status) ? data.status : 'waiting';
             document.getElementById('statusBadge').dataset.status = status;
             document.getElementById('statusLabel').innerText = data.statusLabel || '';
+            showStatusActions(status, hasCode);
 
             if (purchaseStatus === 'refund_pending') {
                 document.getElementById('statusBadge').dataset.status = 'refund_pending';
@@ -945,6 +974,7 @@
                         attemptTimer = null;
                         document.getElementById('statusBadge').dataset.status = 'expired';
                         document.getElementById('statusLabel').innerText = 'Expired';
+                        showStatusActions('expired', false);
                         showReplacementButton(actionsAllowedWhenTimerEnds);
                         showRefundButton(actionsAllowedWhenTimerEnds);
                     }
@@ -1175,6 +1205,58 @@
             }
         }
 
+        async function cancelNumber() {
+            const button = document.getElementById('cancelNumber');
+            const uniqueCode = new URLSearchParams(window.location.search).get('uniquecode');
+
+            if (!uniqueCode || button.disabled) {
+                return;
+            }
+
+            button.disabled = true;
+
+            try {
+                const response = await fetch('{{ url('/api/vm/cancel-number') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document
+                            .querySelector('meta[name="csrf-token"]')
+                            .getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        uniqueCode: uniqueCode
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showToast('The phone number was canceled.');
+                    showStatusActions('expired', false);
+                    showReplacementButton(Boolean(data.can_order_replacement));
+                    showRefundButton(Boolean(data.can_request_refund));
+                    document.getElementById('statusBadge').dataset.status = data.status || 'expired';
+                    document.getElementById('statusLabel').innerText = data.status_label || 'Expired';
+
+                    if (attemptTimer) {
+                        clearInterval(attemptTimer);
+                        attemptTimer = null;
+                    }
+
+                    return;
+                }
+
+                window.alert(data.message || genericVerificationError);
+            } catch (error) {
+                console.error('Cancellation API Error:', error);
+                window.alert(genericVerificationError);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('retryVerification').addEventListener('click', () => {
                 const loading = document.getElementById('verificationLoading');
@@ -1188,6 +1270,7 @@
 
             document.getElementById('getAnotherNumber').addEventListener('click', orderReplacement);
             document.getElementById('requestRefund').addEventListener('click', requestRefund);
+            document.getElementById('cancelNumber').addEventListener('click', cancelNumber);
 
             verifyPayment();
         });
