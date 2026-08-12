@@ -494,7 +494,7 @@ class VMOrderController extends Controller
                 'name' => 'OpenAI',
                 'icon' => asset('storage/icons/openai.png'),
             ],
-            'whatsapp' => [
+            'whatsapp' => [ 
                 'name' => 'WhatsApp',
                 'icon' => asset('storage/icons/whatsapp.png'),
             ],
