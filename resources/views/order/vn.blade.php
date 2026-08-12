@@ -1245,6 +1245,10 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
+                    const cancelButton = document.getElementById('cancelNumber');
+                    cancelButton.disabled = false;
+                    cancelButton.classList.remove('is-loading');
+
                     displayAttempt(
                         data.data,
                         data.can_order_replacement,
