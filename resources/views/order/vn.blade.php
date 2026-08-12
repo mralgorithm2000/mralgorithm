@@ -1256,7 +1256,7 @@
                         setTimeout(() => {
                             showVerificationError(data.message);
                         }, 3500);
-                    } else {
+                    } else {    
                         showVerificationError(genericVerificationError);
                     }
                 }
