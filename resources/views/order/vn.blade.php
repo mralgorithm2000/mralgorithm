@@ -857,7 +857,7 @@
                 <div class="replacement-action" id="cancellationAction">
                     <button class="replacement-btn refund-btn" id="cancelNumber" type="button">
                         <i class="fa-solid fa-circle-notch fa-spin button-spinner" aria-hidden="true"></i>
-                        @lang('sms.cancel_number')
+                        <span id="cancelNumberLabel">@lang('sms.cancel_number')</span>
                     </button>
                 </div>
 
@@ -978,8 +978,51 @@
         }
 
         let attemptTimer = null;
+        let cancellationTimer = null;
         let subscribedAttemptId = null;
         let displayedAttemptId = null;
+
+        function showCancellationTimer(seconds, canCancel) {
+            const button = document.getElementById('cancelNumber');
+            const label = document.getElementById('cancelNumberLabel');
+
+            if (cancellationTimer) {
+                clearInterval(cancellationTimer);
+                cancellationTimer = null;
+            }
+
+            let remaining = Math.max(0, Math.ceil(Number(seconds) || 0));
+
+            const update = () => {
+                if (!canCancel || remaining <= 0) {
+                    button.disabled = !canCancel;
+                    label.innerText = @json(__('sms.cancel_number'));
+
+                    if (cancellationTimer) {
+                        clearInterval(cancellationTimer);
+                        cancellationTimer = null;
+                    }
+
+                    return;
+                }
+
+                const minutes = Math.floor(remaining / 60);
+                const seconds = remaining % 60;
+                const time = String(minutes).padStart(2, '0') + ':' +
+                    String(seconds).padStart(2, '0');
+
+                button.disabled = true;
+                label.innerText = @json(__('sms.cancel_available_in', ['time' => ':time']))
+                    .replace(':time', time);
+                remaining -= 1;
+            };
+
+            update();
+
+            if (remaining >= 0 && canCancel && button.disabled) {
+                cancellationTimer = setInterval(update, 1000);
+            }
+        }
 
         function showReplacementButton(show) {
             document.getElementById('replacementAction').style.display = show ? 'block' : 'none';
@@ -1044,6 +1087,10 @@
             document.getElementById('statusBadge').dataset.status = status;
             document.getElementById('statusLabel').innerText = data.statusLabel || '';
             showStatusActions(status, hasCode);
+            showCancellationTimer(
+                data.cancel_available_in,
+                status === 'waiting' && !hasCode && normalizedPurchaseStatus === 'pending'
+            );
 
             if (normalizedPurchaseStatus === 'refund_pending') {
                 document.getElementById('statusBadge').dataset.status = 'refund_pending';
@@ -1342,6 +1389,7 @@
             button.disabled = true;
             button.classList.add('is-loading');
             let cancellationRequested = false;
+            let cancelAvailableIn = 0;
 
             try {
                 const response = await fetch('{{ url('/api/vm/cancel-number') }}', {
@@ -1360,6 +1408,8 @@
 
                 const data = await response.json();
 
+                cancelAvailableIn = Math.max(0, Number(data.cancel_available_in) || 0);
+
                 if (response.ok && data.success) {
                     cancellationRequested = true;
                     showToast(data.message || @json(__('sms.cancellation_request_sent')));
@@ -1373,7 +1423,12 @@
             } finally {
                 if (displayedAttemptId === cancellationAttemptId) {
                     button.classList.remove('is-loading');
-                    button.disabled = cancellationRequested;
+
+                    if (cancelAvailableIn > 0) {
+                        showCancellationTimer(cancelAvailableIn, true);
+                    } else {
+                        button.disabled = cancellationRequested;
+                    }
                 }
             }
         }

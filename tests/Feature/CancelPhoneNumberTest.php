@@ -52,7 +52,18 @@ class CancelPhoneNumberTest extends TestCase
         $this->assertSame(PhoneAttemptStatus::WAITING->value, $attempt->fresh()->status);
     }
 
-    private function waitingAttempt(): array
+    public function test_a_number_cannot_be_cancelled_during_its_first_three_minutes(): void
+    {
+        [$purchase] = $this->waitingAttempt(false);
+
+        $this->postJson('/api/vm/cancel-number', ['uniqueCode' => $purchase->external_order_id])
+            ->assertConflict()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', __('sms.cancellation_not_available_yet'))
+            ->assertJsonStructure(['cancel_available_in']);
+    }
+
+    private function waitingAttempt(bool $cancellationAvailable = true): array
     {
         $service = VirtualNumber::create([
             'country' => 'US',
@@ -80,6 +91,10 @@ class CancelPhoneNumberTest extends TestCase
             'status' => PhoneAttemptStatus::WAITING->value,
             'expires_at' => now()->addMinutes(5),
         ]);
+
+        if ($cancellationAvailable) {
+            $attempt->forceFill(['created_at' => now()->subMinutes(3)])->saveQuietly();
+        }
 
         return [$purchase, $attempt];
     }

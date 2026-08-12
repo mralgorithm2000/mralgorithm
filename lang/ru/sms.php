@@ -48,6 +48,10 @@ return [
 
     'cancel_number' => 'Отменить этот номер',
 
+    'cancel_available_in' => 'Можно отменить через: :time',
+
+    'cancellation_not_available_yet' => 'Этот номер нельзя отменить в течение первых 3 минут.',
+
     'sms_not_received' => 'Не получили SMS-код?',
 
     'expired_actions_description' => 'Если время истечет, а SMS не придет, появятся две кнопки:',

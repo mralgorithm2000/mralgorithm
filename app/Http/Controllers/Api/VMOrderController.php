@@ -202,6 +202,16 @@ class VMOrderController extends Controller
             ], 422);
         }
 
+        $cancelAvailableIn = $this->cancelAvailableIn($attempt);
+
+        if ($cancelAvailableIn > 0) {
+            return response()->json([
+                'success' => false,
+                'cancel_available_in' => $cancelAvailableIn,
+                'message' => __('sms.cancellation_not_available_yet'),
+            ], 409);
+        }
+
         try {
             $smsCodex->cancelOrder($attempt->provider_order_id);
         } catch (\Throwable $exception) {
@@ -335,6 +345,7 @@ class VMOrderController extends Controller
                 'number' => $attempt->phone_number,
                 'country_code' => $attempt->country_code,
                 'expires_at' => $this->dateToMinutes($attempt->expires_at),
+                'cancel_available_in' => $this->cancelAvailableIn($attempt),
                 'serviceName' => $serviceDetails['name'],
                 'serviceIcon' => $serviceDetails['icon'],
                 'status' => $statusDetails['value'],
@@ -404,6 +415,7 @@ class VMOrderController extends Controller
                 'number' => $attempt->phone_number,
                 'country_code' => $attempt->country_code,
                 'expires_at' => $this->dateToMinutes($attempt->expires_at),
+                'cancel_available_in' => $this->cancelAvailableIn($attempt),
                 'serviceName' => $serviceDetails['name'],
                 'serviceIcon' => $serviceDetails['icon'],
                 'status' => $statusDetails['value'],
@@ -443,6 +455,7 @@ class VMOrderController extends Controller
                 'number' => $attempt?->phone_number,
                 'country_code' => $attempt?->country_code,
                 'expires_at' => $attempt ? $this->dateToMinutes($attempt->expires_at) : 0,
+                'cancel_available_in' => $attempt ? $this->cancelAvailableIn($attempt) : 0,
                 'serviceName' => $serviceDetails['name'],
                 'serviceIcon' => $serviceDetails['icon'],
                 'status' => $statusDetails['value'],
@@ -551,5 +564,10 @@ class VMOrderController extends Controller
         $expires = Carbon::parse($date);
 
         return max(0, $now->diffInSeconds($expires, false));
+    }
+
+    private function cancelAvailableIn(PhoneAttempt $attempt): int
+    {
+        return max(0, (int) ceil(now()->diffInSeconds($attempt->created_at->copy()->addMinutes(3), false)));
     }
 }

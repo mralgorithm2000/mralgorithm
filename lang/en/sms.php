@@ -48,6 +48,10 @@ return [
 
     'cancel_number' => 'Cancel This Number',
 
+    'cancel_available_in' => 'Can be cancelled in: :time',
+
+    'cancellation_not_available_yet' => 'This number cannot be cancelled during the first 3 minutes.',
+
     'sms_not_received' => "Didn't receive an SMS code?",
 
     'expired_actions_description' => 'If the timer expires without receiving an SMS, two buttons will appear:',
