@@ -1000,7 +1000,7 @@
             const isCompleted = status === 'completed' || status === 'received' || hasCode;
 
             document.getElementById('waitingCancellationNotice').style.display = isWaiting ? 'block' : 'none';
-            document.getElementById('cancellationAction').style.display = isWaiting ? 'block' : 'none';
+            // document.getElementById('cancellationAction').style.display = isWaiting ? 'block' : 'none';
             document.getElementById('expiredNotice').style.display = !isWaiting && !isCompleted ? 'block' : 'none';
         }
 
