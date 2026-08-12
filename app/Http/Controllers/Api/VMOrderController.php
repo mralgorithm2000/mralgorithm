@@ -85,6 +85,7 @@ class VMOrderController extends Controller
         // $job = $this->doTheJob($verification['id_goods'], $verification['options'], $verification['inv']);
 
         $this->authorizeAttemptChannel($request, $job['attempt']);
+        $job['data']['cancel_available_in'] = $this->cancelAvailableIn($job['attempt']);
 
         return response()->json([
             'success' => true,

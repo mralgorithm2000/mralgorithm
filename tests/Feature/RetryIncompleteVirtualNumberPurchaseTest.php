@@ -54,7 +54,8 @@ class RetryIncompleteVirtualNumberPurchaseTest extends TestCase
         $this->postJson('/api/vm/verify', ['uniquecode' => 'test'])
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.number', '5551234567');
+            ->assertJsonPath('data.number', '5551234567')
+            ->assertJsonPath('data.cancel_available_in', fn ($seconds) => $seconds > 0 && $seconds <= 180);
 
         $this->assertDatabaseHas('phone_attempts', [
             'purchase_id' => $purchase->id,
