@@ -979,6 +979,7 @@
 
         let attemptTimer = null;
         let subscribedAttemptId = null;
+        let displayedAttemptId = null;
 
         function showReplacementButton(show) {
             document.getElementById('replacementAction').style.display = show ? 'block' : 'none';
@@ -1010,6 +1011,7 @@
             canRequestRefund = false,
             purchaseStatus = 'pending'
         ) {
+            displayedAttemptId = data.order_id ?? null;
             const normalizedPurchaseStatus = String(purchaseStatus || 'pending').trim().toLowerCase();
 
             if (data.order_id && Number(data.order_id) !== Number(subscribedAttemptId)) {
@@ -1331,6 +1333,7 @@
         async function cancelNumber() {
             const button = document.getElementById('cancelNumber');
             const uniqueCode = new URLSearchParams(window.location.search).get('uniquecode');
+            const cancellationAttemptId = displayedAttemptId;
 
             if (!uniqueCode || button.disabled) {
                 return;
@@ -1368,8 +1371,10 @@
                 console.error('Cancellation API Error:', error);
                 showToast(genericVerificationError, 'error');
             } finally {
-                button.classList.remove('is-loading');
-                button.disabled = cancellationRequested;
+                if (displayedAttemptId === cancellationAttemptId) {
+                    button.classList.remove('is-loading');
+                    button.disabled = cancellationRequested;
+                }
             }
         }
 
