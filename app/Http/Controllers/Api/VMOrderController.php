@@ -502,6 +502,10 @@ class VMOrderController extends Controller
                 'name' => 'Google',
                 'icon' => asset('storage/icons/google.png'),
             ],
+            'facebook' => [
+                'name' => 'Facebook',
+                'icon' => asset('storage/icons/facebook.png'),
+            ],
         ];
 
         $serviceType = Str::lower(trim((string) $type));
