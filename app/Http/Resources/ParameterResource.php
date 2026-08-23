@@ -17,6 +17,7 @@ class ParameterResource extends JsonResource
             'parameter_key' => $this->parameter_key,
             'title' => $this->title,
             'type' => $this->type,
+            'is_main' => (bool) $this->is_main,
             'options' => ParameterOptionResource::collection($this->whenLoaded('options')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

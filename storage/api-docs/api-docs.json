@@ -813,6 +813,11 @@
                                             "checkbox",
                                             "multiline_textarea"
                                         ]
+                                    },
+                                    "is_main": {
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -3378,6 +3383,10 @@
                             "checkbox",
                             "multiline_textarea"
                         ]
+                    },
+                    "is_main": {
+                        "type": "boolean",
+                        "example": true
                     },
                     "options": {
                         "type": "array",

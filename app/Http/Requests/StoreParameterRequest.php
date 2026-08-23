@@ -31,6 +31,7 @@ class StoreParameterRequest extends FormRequest
                     'multiline_textarea',
                 ]),
             ],
+            'is_main' => ['sometimes', 'boolean'],
         ];
     }
 }

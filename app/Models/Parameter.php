@@ -12,7 +12,11 @@ class Parameter extends Model
         'parameter_key',
         'type',
         'goods_id',
-        'is_main'
+        'is_main',
+    ];
+
+    protected $casts = [
+        'is_main' => 'boolean',
     ];
 
     public function options(): HasMany
