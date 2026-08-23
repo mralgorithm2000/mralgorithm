@@ -18,7 +18,7 @@ jobs:
         PORT: ${{ secrets.PORT }}
         PASSWORD: ${{ secrets.PASSWORD }}
         source: "."
-        target: "/var/www/mralgorithm/my"
+        target: "/var/www/mralgorithm/api"
 
     - name: Executing remote command
       uses: appleboy/ssh-action@master
@@ -27,4 +27,4 @@ jobs:
         USERNAME: ${{ secrets.USERNAME }}
         PORT: ${{ secrets.PORT }}
         PASSWORD: ${{ secrets.PASSWORD }}
-        script: "chmod 777 -R /var/www/mralgorithm/my/storage && chmod 777 -R /var/www/mralgorithm/my/public && rm -R /var/www/mralgorithm/my/.git"
+        script: "chmod 777 -R /var/www/mralgorithm/api/storage && chmod 777 -R /var/www/mralgorithm/api/public && rm -R /var/www/mralgorithm/api/.git"
