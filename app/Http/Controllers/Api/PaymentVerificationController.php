@@ -77,6 +77,14 @@ class PaymentVerificationController extends Controller
             $optionsArr[$option['id']] = $option['variant_id'] ?? $option['value'];
         }
 
+        Log::info('Plati verification data', [
+            'options' => $options,
+            'uniqueCode' => $uniqueCode,
+            'verification' => $verification,
+            'goods' => $goods,
+            'parameter' => $parameter,
+            'optionsArr' => $optionsArr,
+        ]);
 
         $optionId = $optionsArr[$parameter['marketplace_parameter_id']] ?? null;
 
