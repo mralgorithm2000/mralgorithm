@@ -18,7 +18,9 @@ class OrderStatusController extends Controller
     public function check(Request $request)
     {
         $order_id = $request->post('order_id');
-        $order = Order::where('user_code', $order_id)->first();
+        $order = Order::query()->with('orderDetails')->whereHas('orderDetails', function ($query) use ($order_id): void {
+            $query->where('order_detail_key', 'user_code')->where('order_detail_value', $order_id);
+        })->first();
 
         if ($order == '') {
             return response()->json([
@@ -27,10 +29,11 @@ class OrderStatusController extends Controller
             ]);
         }
 
-        $orderStatus = $this->getOrderStatus($order->order_id);
+        $orderStatus = $this->getOrderStatus($order->supplier_order_id);
+        $details = $order->orderDetails->keyBy('order_detail_key');
 
-        Log::info('log status ordedfr',[
-            'orderStatus' => $orderStatus
+        Log::info('log status ordedfr', [
+            'orderStatus' => $orderStatus,
         ]);
 
         return response()->json([
@@ -39,8 +42,8 @@ class OrderStatusController extends Controller
             'order' => [
                 'status' => $orderStatus['status'],
                 'remains' => $orderStatus['remains'],
-                'link' => $order['link'],
-                'quantity' => $order['quantity'],
+                'link' => $details->get('link')?->order_detail_value,
+                'quantity' => $details->get('quantity')?->order_detail_value,
             ],
         ]);
     }

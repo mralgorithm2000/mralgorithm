@@ -17,6 +17,7 @@
         "laravel/tinker": "^3.0",
         "mcamara/laravel-localization": "^2.4",
         "pusher/pusher-php-server": "^7.2",
+        "spatie/laravel-permission": "^8.3",
         "symfony/css-selector": "^8.0",
         "symfony/dom-crawler": "^8.0"
     },

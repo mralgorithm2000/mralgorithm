@@ -12,7 +12,7 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::query()->updateOrCreate(
+        $admin = User::query()->updateOrCreate(
             ['email' => config('auth.admin.email')],
             [
                 'name' => config('auth.admin.name'),
@@ -20,5 +20,7 @@ class AdminUserSeeder extends Seeder
                 'email_verified_at' => now(),
             ],
         );
+
+        $admin->syncRoles('admin');
     }
 }

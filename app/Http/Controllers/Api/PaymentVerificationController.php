@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App;
 use App\Http\Controllers\Controller;
+use App\Models\Good;
 use App\Models\Option;
 use App\Models\Order;
+use App\Models\OrderTempInfo;
+use App\Models\Parameter;
+use App\Models\ParameterOption;
 use App\Models\Purchase;
 use App\Models\SmService;
 use App\Services\DigisellerService;
@@ -15,17 +20,36 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class PaymentVerificationController extends Controller
+
 {
-    public function verify(Request $request)
+    public function plati_verify(Request $request)
     {
         $validated = $request->validate([
             'uniquecode' => ['required', 'string', 'max:255'],
+            'lang' => 'required'
         ]);
 
-        $digiseller = new DigisellerService;
         $uniqueCode = $validated['uniquecode'];
+        $lang = $validated['lang'];
+        App::setLocale($lang);
+
+        $existing = Purchase::query()
+            ->where('marketplace', 'plati')
+            ->where('marketplace_order_id', $uniqueCode)
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'success' => true,
+                'order_id' => $existing->marketplace_order_id,
+                'message' => __('payment.payment_already_verified'),
+            ]);
+        }
+
+        $digiseller = new DigisellerService;
         $verification = $this->verificationData($digiseller->verifyPurchase($uniqueCode));
         $invoiceId = (string) ($verification['inv'] ?? '');
+        $options = $verification['options'] ?? [];
 
         if ($invoiceId === '') {
             return response()->json([
@@ -34,48 +58,47 @@ class PaymentVerificationController extends Controller
             ], 422);
         }
 
-        $existing = Purchase::query()
-            ->where('marketplace', 'plati')
-            ->where('external_order_id', $uniqueCode)
+        $goods = Good::join('goods_marketplace_mappings', 'goods.id', '=', 'goods_marketplace_mappings.good_id')
+            ->where('goods_marketplace_mappings.marketplace', 'plati')
+            ->where('goods_marketplace_mappings.marketplace_product_id', $verification['id_goods'])
+            ->select(['goods.id'])
             ->first();
 
-        if ($existing) {
-            return response()->json([
-                'success' => true,
-                'order_id' => $existing->external_order_id,
-                'message' => __('payment.started_or_finished'),
-            ]);
+        $parameter = Parameter::join('marketplace_parameter_mappings', 'parameters.id', '=', 'marketplace_parameter_mappings.parameter_id')
+            ->where('marketplace_parameter_mappings.marketplace', 'plati')
+            ->where('parameters.goods_id', $goods['id'])
+            ->where('parameters.is_main', true)
+            ->select(['parameters.id', 'marketplace_parameter_mappings.marketplace_parameter_id'])
+            ->first();
+
+        $optionsArr = [];
+
+        foreach ($options as $option) {
+            $optionsArr[$option['id']] = $option['variant_id'] ?? $option['value'];
         }
 
-        if (@$verification['unique_code_state']['date_delivery'] != null) {
-            return response()->json([
-                'success' => true,
-                'order_id' => $verification['inv'],
-                'message' => __('payment.started_or_finished'),
-            ]);
-        }
 
-        try {
-            $job = $this->doTheJob(
-                $verification['id_goods'],
-                $verification['cnt_goods'],
-                $verification['options'],
-                $verification['inv'],
-                $verification,
-                $validated['uniquecode']
-            );
-        } catch (\Exception $e) {
-            Log::error('Error processing payment verification', [
-                'exception' => $e,
-                'verification' => $verification,
-            ]);
+        $optionId = $optionsArr[$parameter['marketplace_parameter_id']] ?? null;
 
-            return response()->json([
-                'success' => false,
-                'message' => __('payment.error_automatic'),
-            ], 500);
-        }
-        $digiseller->markAsDelivered($uniqueCode);
+        $option = ParameterOption::join('marketplace_option_mappings', 'parameter_options.id', '=', 'marketplace_option_mappings.parameter_option_id')
+            ->where('parameter_options.parameter_id', $parameter['id'])
+            ->where('marketplace_option_mappings.marketplace_option_id', $optionId)
+            ->first();
+
+        Purchase::create([
+            'marketplace' => 'plati',
+            'marketplace_order_id' => $uniqueCode,
+            'goods_id' => $goods->id ?? null,
+            'sold_price' => $verification['amount_usd'],
+        ]);
+
+        $normalizedResponse = $this->normilizewResponse($verification);
+
+        OrderTempInfo::create([
+            'purchase_id' => Purchase::where('marketplace_order_id', $uniqueCode)->first()->id,
+            'order_detail' => json_encode($normalizedResponse),
+            'option_id' => $option->id ?? null,
+        ]);
 
         return response()->json([
             'success' => true,
@@ -84,116 +107,6 @@ class PaymentVerificationController extends Controller
         ]);
     }
 
-    private function doTheJob($service_id, $quantity, $options, $invoice_id, array $verification, $uniqueCode)
-    {
-        $optionsArr = [];
-
-        foreach ($options as $option) {
-            $optionsArr[$option['id']] = $option['variant_id'] ?? $option['value'];
-        }
-
-        $serviceTypeId = Option::where('plati_id', $service_id)->where('type', 'service_type')->value('option_id');
-        $serviceLinkId = Option::where('plati_id', $service_id)->where('type', 'link')->value('option_id');
-
-        $plati_id = $serviceTypeId !== null
-            ? ($optionsArr[$serviceTypeId] ?? null)
-            : null;
-
-        $service = SmService::where('plati_id', $plati_id)->firstOrFail();
-        $serviceId = $service->api_id;
-
-        $link = $optionsArr[$serviceLinkId];
-
-        $sold = max(0, (float) ($verification['amount_usd'] ?? 0));
-        $profit = max(0, (float) ($verification['profit'] ?? $sold));
-
-        try {
-            [$purchase, $order] = DB::transaction(function () use ($service, $invoice_id, $uniqueCode, $sold, $profit, $link, $quantity, $plati_id, $serviceId) {
-                $purchase = $service->purchases()->create([
-                    'marketplace' => 'plati',
-                    'external_order_id' => (string) $uniqueCode,
-                    'sold_price' => $sold,
-                    'cost_price' => 0,
-                    'marketplace_fee' => max(0, $sold - $profit),
-                    'refunded_amount' => 0,
-                    'status' => 'pending',
-                ]);
-
-                $order = Order::create([
-                    'purchase_id' => $purchase->id,
-                    'status' => 'init',
-                    'link' => $link,
-                    'quantity' => $quantity,
-                    'api_id' => $plati_id,
-                    'service_id' => $serviceId,
-                    'user_code' => $invoice_id,
-                ]);
-
-                return [$purchase, $order];
-            }, 3);
-        } catch (UniqueConstraintViolationException) {
-            $purchase = Purchase::query()
-                ->where('marketplace', 'plati')
-                ->where('external_order_id', (string) $uniqueCode)
-                ->firstOrFail();
-            $order = Order::where('purchase_id', $purchase->id)->firstOrFail();
-        }
-
-        Log::info('hi oreder', [
-            'serviceLinkId' => $serviceLinkId,
-            'order' => $order,
-        ]);
-
-        // return [
-        //     'user_code' => rand(1000000, 9999999),
-        // ];
-
-        $response = Http::asForm()->post('https://panel.smmflw.com/api/iran', [
-            'key' => env('FOLLOWERAN_API_KEY'),
-            'action' => 'add',
-            'service' => $serviceId,
-            'link' => $link,
-            'quantity' => $quantity,
-            'is_test' => 0,
-        ]);
-
-        Log::info('api response', [
-            'response' => $response->json(),
-        ]);
-
-        if ($response->successful()) {
-            $result = $response->json();
-
-            if (isset($result['order'])) {
-                Order::where('id', $order->id)->update([
-                    'order_id' => $result['order'],
-                    'status' => $result['status'],
-                ]);
-
-                $actualCost = $result['charge'] ?? $result['cost'] ?? $result['price'] ?? null;
-                if (is_numeric($actualCost) && (float) $actualCost > 0) {
-                    $purchase->increment('cost_price', (float) $actualCost);
-                }
-
-            } else {
-                Order::where('id', $order->id)->update([
-                    'status' => 'failed',
-                    'error' => $result['error'],
-                ]);
-            }
-
-            return $result;
-        } else {
-            Order::where('id', $order->id)->update([
-                'status' => 'failed',
-                'error' => $response->body(),
-            ]);
-        }
-
-        return [
-            'user_code' => $order->user_code,
-        ];
-    }
 
     private function verificationData(array $verification): array
     {
@@ -202,16 +115,45 @@ class PaymentVerificationController extends Controller
             : $verification;
     }
 
-    private function makeUniqueRandId()
-    {
-        $randid = rand(1000000, 9999999);
+    private function normilizewResponse($response){
+        $parameters = [];
 
-        $order = Order::where('user_code', $randid)->first();
+        if(isset($response['options']) && is_array($response['options'])){
+            foreach ($response['options'] as $option) {
+                $parameter = Parameter::join('marketplace_parameter_mappings', 'parameters.id', '=', 'marketplace_parameter_mappings.parameter_id')
+                    ->where('marketplace_parameter_mappings.marketplace', 'plati')
+                    ->where('marketplace_parameter_mappings.marketplace_parameter_id', $option['id'])
+                    ->select(['parameters.id', 'parameters.parameter_key', 'marketplace_parameter_mappings.marketplace_parameter_id'])
+                    ->first();
 
-        if ($order) {
-            return $this->makeUniqueRandId();
+                $parameter_value = '';
+
+                if($option['variant_id']){
+                    $myDBOption = ParameterOption::join('marketplace_option_mappings', 'parameter_options.id', '=', 'marketplace_option_mappings.parameter_option_id')
+                        ->where('parameter_options.parameter_id', $parameter['id'])
+                        ->where('marketplace_option_mappings.marketplace_option_id', $option['variant_id'])
+                        ->select(['parameter_options.id', 'marketplace_option_mappings.marketplace_option_id', 'parameter_options.option_value'])
+                        ->first();
+
+                    $parameter_value = $myDBOption->option_value ?? '';
+                }else{
+                    $parameter_value = $option['value'] ?? '';
+                }
+
+                $parameters[$parameter['parameter_key']] = $parameter_value;
+            }
         }
 
-        return $randid;
+        $data = [
+            'amount' => $response['amount'] ?? 0,
+            'amount_usd' => $response['amount_usd'] ?? 0,
+            'profit' => $response['profit'] ?? 0,
+            'email' => $response['email'] ?? '',
+            'quantity' => $response['cnt_goods'] ?? 0,
+            'options' => $parameters,
+        ];
+
+        return $data;
+
     }
 }

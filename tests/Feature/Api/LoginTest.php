@@ -5,6 +5,8 @@ namespace Tests\Feature\Api;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\PersonalAccessToken;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class LoginTest extends TestCase
@@ -17,6 +19,10 @@ class LoginTest extends TestCase
             'email' => 'user@example.com',
             'password' => 'correct-password',
         ]);
+        $permission = Permission::create(['name' => 'user_list', 'guard_name' => 'web']);
+        $role = Role::create(['name' => 'admin', 'guard_name' => 'web']);
+        $role->givePermissionTo($permission);
+        $user->assignRole($role);
 
         $response = $this->postJson('/api/login', [
             'email' => 'user@example.com',
@@ -28,10 +34,12 @@ class LoginTest extends TestCase
             ->assertJsonStructure([
                 'token',
                 'token_type',
-                'user' => ['id', 'name', 'email'],
+                'user' => ['id', 'name', 'email', 'roles', 'permissions'],
             ])
             ->assertJsonPath('token_type', 'Bearer')
             ->assertJsonPath('user.id', $user->id)
+            ->assertJsonPath('user.roles', ['admin'])
+            ->assertJsonPath('user.permissions', ['user_list'])
             ->assertJsonMissingPath('user.password')
             ->assertJsonMissingPath('user.remember_token');
 

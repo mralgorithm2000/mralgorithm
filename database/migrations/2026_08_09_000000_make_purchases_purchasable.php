@@ -11,11 +11,10 @@ return new class extends Migration
         Schema::create('purchases', function (Blueprint $table) {
             $table->id();
 
-            $table->unsignedBigInteger('purchasable_id');
-            $table->string('purchasable_type');
+            $table->unsignedBigInteger('goods_id');
 
             $table->string('marketplace')->default('plati');
-            $table->string('external_order_id');
+            $table->string('marketplace_order_id');
 
             $table->decimal('refunded_amount', 18, 6)->default(0);
 
@@ -23,12 +22,8 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index(
-                ['purchasable_type', 'purchasable_id'],
-                'purchases_purchasable_type_purchasable_id_index'
-            );
-
-            $table->unique(['marketplace', 'external_order_id']);
+            $table->index('goods_id');
+            $table->unique(['marketplace', 'marketplace_order_id']);
         });
     }
 

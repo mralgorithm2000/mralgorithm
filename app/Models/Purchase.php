@@ -5,18 +5,22 @@ namespace App\Models;
 use App\Enums\PhoneAttemptStatus;
 use App\Enums\PurchaseStatus;
 use App\Enums\RefundRequestStatus;
+use Database\Factories\PurchaseFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Purchase extends Model
 {
+    /** @use HasFactory<PurchaseFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'marketplace',
-        'external_order_id',
-        'purchasable_id',
-        'purchasable_type',
+        'marketplace_order_id',
+        'goods_id',
         'sold_price',
         'cost_price',
         'marketplace_fee',
@@ -34,9 +38,14 @@ class Purchase extends Model
         ];
     }
 
-    public function purchasable(): MorphTo
+    public function good(): BelongsTo
     {
-        return $this->morphTo();
+        return $this->belongsTo(Good::class, 'goods_id');
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
     }
 
     public function phoneAttempts(): HasMany
