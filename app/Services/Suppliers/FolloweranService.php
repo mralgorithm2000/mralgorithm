@@ -74,6 +74,7 @@ class FolloweranService
         $this->updatePurchase($purcahse, $api_response);
 
         $success = $order['status'] != 'failed' ? true : false;
+
         return [
             'success' => $success,
             'tracking_code' => $order['tracking_code'] ?? null,
@@ -95,14 +96,18 @@ class FolloweranService
 
     private function sendRequest($link, $serviceId, $quantity)
     {
-        $response = Http::asForm()->post('https://my.followeran.ir/api/v2', [
-            'key' => env('FOLLOWERAN_API_KEY'),
-            'action' => 'add',
-            'service' => $serviceId,
-            'link' => $link,
-            'quantity' => $quantity,
-            'is_test' => 0,
-        ]);
+        $response = Http::asForm()
+            ->connectTimeout(10)
+            ->timeout(30)
+            ->retry(3, 1000)
+            ->post('https://my.followeran.ir/api/v2', [
+                'key' => env('FOLLOWERAN_API_KEY'),
+                'action' => 'add',
+                'service' => $serviceId,
+                'link' => $link,
+                'quantity' => $quantity,
+                'is_test' => 0,
+            ]);
 
         Log::info('api response', [
             'response' => $response->json(),
