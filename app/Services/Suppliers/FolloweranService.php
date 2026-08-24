@@ -30,6 +30,7 @@ class FolloweranService
         $link = $order->orderDetails()->where('order_detail_key', 'link')->value('order_detail_value');
         $status = ($order_status['status'] == 'Completed') ? 'completed' : 'processing';
         $message = ($order_status['status'] == 'Completed') ? __('order.completed') : __('order.started');
+
         return [
             'success' => true,
             'tracking_code' => $order['tracking_code'] ?? null,
@@ -149,11 +150,15 @@ class FolloweranService
 
     public function getOrderStatus(string $orderId): array
     {
-        $response = Http::asForm()->post('https://my.followeran.ir/api/v2', [
-            'key' => env('FOLLOWERAN_API_KEY'),
-            'action' => 'status',
-            'order' => $orderId,
-        ]);
+        $response = Http::asForm()
+            ->connectTimeout(10)
+            ->timeout(30)
+            ->retry(3, 1000)
+            ->post('https://my.followeran.ir/api/v2', [
+                'key' => env('FOLLOWERAN_API_KEY'),
+                'action' => 'status',
+                'order' => $orderId,
+            ]);
 
         Log::info('log status order', [
             'orderId' => $orderId,
