@@ -73,8 +73,9 @@ class FolloweranService
         $order = $this->createOrder($purcahse, $api_response, $orderDetail);
         $this->updatePurchase($purcahse, $api_response);
 
+        $success = $order['status'] != 'failed' ? true : false;
         return [
-            'success' => $order['success'],
+            'success' => $success,
             'tracking_code' => $order['tracking_code'] ?? null,
             'message' => __('order.started'),
             'sub_message' => null,
@@ -120,10 +121,11 @@ class FolloweranService
     {
         $actualCost = $api_response['charge'] ?? $api_response['cost'] ?? $api_response['price'] ?? null;
 
+        $status = ($api_response['status'] == 'success') ? 'processing' : 'failed';
         $order = Order::create([
             'purchase_id' => $purchase->id,
             'supplier_order_id' => $api_response['order'] ?? null,
-            'status' => $api_response['status'] ?? 'failed',
+            'status' => $status,
             'sold_price' => $purchase->sold_price,
             'cost_price' => (float) $actualCost ?? 0,
             'tracking_code' => 'MR-'.Str::random(10),
