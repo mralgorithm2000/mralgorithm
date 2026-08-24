@@ -38,6 +38,12 @@ class PaymentVerificationController extends Controller
             ->where('marketplace_order_id', $uniqueCode)
             ->first();
 
+        Log::info('Plati verification request', [
+            'uniqueCode' => $uniqueCode,
+            'lang' => $lang,
+            'existing' => $existing,
+        ]);
+
         if ($existing) {
             return response()->json([
                 'success' => true,
