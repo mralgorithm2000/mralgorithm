@@ -106,7 +106,7 @@ class FolloweranService
                 'service' => $serviceId,
                 'link' => $link,
                 'quantity' => $quantity,
-                'is_test' => 0,
+                'is_test' => 1,
             ]);
 
         Log::info('api response', [
