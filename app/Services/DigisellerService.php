@@ -61,6 +61,11 @@ class DigisellerService
             'unit_name' => $data['unit_name'],
         ];
 
+        $limitations = $this->buildLimitationsPayload($good);
+        if ($limitations !== null) {
+            $payload['limitations'] = $limitations;
+        }
+
         return $this->createProduct('uniqueunfixed', $payload);
     }
 
@@ -125,6 +130,56 @@ class DigisellerService
             'auto_verify' => true,
             'verify_url' => config('services.digiseller.verify_url'),
         ];
+    }
+
+    /**
+     * Builds the Digiseller `limitations` payload from the Good's `min_quantity`
+     * and `max_quantity` details. Returns null when no quantity restrictions are
+     * configured so the caller can omit the field entirely.
+     *
+     * Mapping to Digiseller limitation types:
+     *   - Both min and max present → MinAndMax  (two-value array, any order)
+     *   - Only min present         → FixedQuantity with [min]
+     *   - Only max present         → FixedQuantity with [max]
+     *   - Neither present          → null (field omitted)
+     *
+     * @return array{type: string, limitations: list<int>, only_integer: bool}|null
+     */
+    private function buildLimitationsPayload(Good $good): ?array
+    {
+        $details = $good->details->keyBy('good_key');
+
+        $minRaw = $details->get('min_quantity')?->good_value;
+        $maxRaw = $details->get('max_quantity')?->good_value;
+
+        $min = is_numeric($minRaw) ? (int) $minRaw : null;
+        $max = is_numeric($maxRaw) ? (int) $maxRaw : null;
+
+        if ($min !== null && $max !== null) {
+            return [
+                'type' => 'MinAndMax',
+                'limitations' => [$min, $max],
+                'only_integer' => true,
+            ];
+        }
+
+        if ($min !== null) {
+            return [
+                'type' => 'FixedQuantity',
+                'limitations' => [$min],
+                'only_integer' => true,
+            ];
+        }
+
+        if ($max !== null) {
+            return [
+                'type' => 'FixedQuantity',
+                'limitations' => [$max],
+                'only_integer' => true,
+            ];
+        }
+
+        return null;
     }
 
     /** @param array<string, mixed> $payload */
