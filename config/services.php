@@ -49,5 +49,9 @@ return [
         'api_key' => env('NUMBERLAND_API_KEY'),
     ],
 
+    'digiseller' => [
+        'verify_url' => env('DIGISELLER_VERIFY_URL', 'https://order.mralgorithm.ru/'),
+    ],
+
 
 ];

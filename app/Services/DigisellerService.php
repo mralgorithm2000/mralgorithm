@@ -97,6 +97,7 @@ class DigisellerService
             ]],
             'comission_partner' => $data['commission_partner'] ?? 0,
             'enabled' => $data['enabled'] ?? true,
+            'verify_code' => $this->verifyCodePayload(),
         ];
 
         $additionalInfo = $data['add_info'];
@@ -111,19 +112,46 @@ class DigisellerService
         return $payload;
     }
 
+    /**
+     * Builds the verify_code payload that enables automatic unique-code
+     * verification on the Digiseller product. Digiseller will redirect the
+     * buyer to the configured verify_url with `?uniquecode=<code>` appended.
+     *
+     * @return array{auto_verify: bool, verify_url: string}
+     */
+    private function verifyCodePayload(): array
+    {
+        return [
+            'auto_verify' => true,
+            'verify_url' => config('services.digiseller.verify_url'),
+        ];
+    }
+
     /** @param array<string, mixed> $payload */
     private function createProduct(string $type, array $payload): int
     {
+        $url = "https://api.digiseller.com/api/product/create/{$type}";
+        $startedAt = microtime(true);
+
+        Log::info('Digiseller product creation request started.', [
+            'type' => $type,
+            'url' => $url,
+            'payload' => $payload,
+        ]);
+
         try {
             $response = Http::acceptJson()->post(
-                "https://api.digiseller.com/api/product/create/{$type}?token=".$this->getToken(),
+                $url.'?token='.$this->getToken(),
                 $payload,
             );
-
-            Log::error('This is a diigiseller error', [
-                'response' => $response,
-            ]);
         } catch (ConnectionException $exception) {
+            Log::error('Digiseller product creation connection failed.', [
+                'type' => $type,
+                'url' => $url,
+                'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+                'exception' => $exception->getMessage(),
+            ]);
+
             throw new DigisellerException(
                 'Unable to connect to DigiSeller.',
                 ['message' => $exception->getMessage()],
@@ -131,6 +159,15 @@ class DigisellerService
         }
 
         $responseData = $response->json();
+
+        Log::log($response->successful() ? 'info' : 'error', 'Digiseller product creation response received.', [
+            'type' => $type,
+            'url' => $url,
+            'status' => $response->status(),
+            'successful' => $response->successful(),
+            'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+            'response' => is_array($responseData) ? $responseData : $response->body(),
+        ]);
 
         if (! $response->successful() || ! is_array($responseData) || ($responseData['retval'] ?? 1) !== 0) {
             throw new DigisellerException(
