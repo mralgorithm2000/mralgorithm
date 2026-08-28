@@ -5,6 +5,7 @@ namespace App\Services\Suppliers;
 use App\Models\Order;
 use App\Models\OrderTempInfo;
 use App\Models\ParameterOption;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -96,6 +97,8 @@ class FolloweranService
 
     private function sendRequest($link, $serviceId, $quantity)
     {
+        $testmode = Setting::where('key', 'followeran_test_mode')->value('value');
+        $testmode = $testmode == '1' ? 1 : 0;
         $response = Http::asForm()
             ->connectTimeout(10)
             ->timeout(30)
@@ -106,7 +109,7 @@ class FolloweranService
                 'service' => $serviceId,
                 'link' => $link,
                 'quantity' => $quantity,
-                'is_test' => 1,
+                'is_test' => $testmode,
             ]);
 
         Log::info('api response', [
