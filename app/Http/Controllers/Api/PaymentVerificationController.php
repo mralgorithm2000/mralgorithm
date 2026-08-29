@@ -97,6 +97,7 @@ class PaymentVerificationController extends Controller
         $option = ParameterOption::join('marketplace_option_mappings', 'parameter_options.id', '=', 'marketplace_option_mappings.parameter_option_id')
             ->where('parameter_options.parameter_id', $parameter['id'])
             ->where('marketplace_option_mappings.marketplace_option_id', $optionId)
+            ->select('parameter_options.id', 'marketplace_option_mappings.marketplace_option_id')
             ->first();
 
         Purchase::create([
